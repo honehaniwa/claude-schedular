@@ -265,7 +265,7 @@ jobs:
       run: cargo install cargo-audit
       
     - name: Run security audit (CLI only)
-      run: cargo audit --no-default-features
+      run: cargo audit
 
   build-binaries:
     name: Build Release Binaries
