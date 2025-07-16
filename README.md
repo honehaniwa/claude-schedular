@@ -2,7 +2,7 @@
 
 Claude AIコマンドとGit Worktreeに対応したWebベースのスケジューラー - Dioxusで構築
 
-[![CI/CD](https://github.com/your-username/claude-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/claude-scheduler/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/claude-scheduler/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org/)
 [![Dioxus](https://img.shields.io/badge/dioxus-0.5-green.svg)](https://dioxuslabs.com/)
