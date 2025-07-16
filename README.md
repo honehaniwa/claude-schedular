@@ -2,7 +2,7 @@
 
 Claude AIコマンドとGit Worktreeに対応したスケジューラー - CLI & GUIの両方をサポート
 
-[![CI/CD](https://github.com/honehaniwa/claude-schedular/actions/workflows/ci.yml/badge.svg)](https://github.com/honehaniwa/claude-schedular/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org/)
 [![Dioxus](https://img.shields.io/badge/dioxus-0.5-green.svg)](https://dioxuslabs.com/)
@@ -51,8 +51,8 @@ Claude SchedulerはClaude AIコマンドやシェルコマンドをスケジュ�
 ### ソースからビルド
 ```bash
 # リポジトリをクローン
-git clone https://github.com/honehaniwa/claude-schedular.git
-cd claude-schedular
+git clone https://github.com/honehaniwa/claude-scheduler.git
+cd claude-scheduler
 
 # プロジェクトをビルド
 cargo build --release
@@ -62,7 +62,7 @@ cargo run
 ```
 
 ### ビルド済みバイナリの使用
-[リリースページ](https://github.com/honehaniwa/claude-schedular/releases)から最新版をダウンロードしてください。
+[リリースページ](https://github.com/honehaniwa/claude-scheduler/releases)から最新版をダウンロードしてください。
 
 ## 使い方
 
@@ -243,8 +243,8 @@ database_path = "~/.local/share/claude-scheduler/db.sqlite"
 ### 開発環境のセットアップ
 ```bash
 # リポジトリをクローン
-git clone https://github.com/honehaniwa/claude-schedular.git
-cd claude-schedular
+git clone https://github.com/honehaniwa/claude-scheduler.git
+cd claude-scheduler
 
 # 依存関係をインストール
 cargo build
@@ -326,7 +326,7 @@ cargo clippy --all-targets --all-features -- -D warnings
 
 2. **リポジトリの追加**
    - Codecovダッシュボードで「Add a repository」をクリック
-   - `honehaniwa/claude-schedular`を選択
+   - `honehaniwa/claude-scheduler`を選択
 
 3. **トークンの取得**
    - リポジトリ設定ページでアップロードトークンをコピー
@@ -352,5 +352,5 @@ cargo clippy --all-targets --all-features -- -D warnings
    - Codecovダッシュボードからバッジ用のMarkdownをコピー
    - README.mdのバッジセクションに追加：
    ```markdown
-   [![codecov](https://codecov.io/gh/honehaniwa/claude-schedular/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/honehaniwa/claude-schedular)
+   [![codecov](https://codecov.io/gh/honehaniwa/claude-scheduler/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/honehaniwa/claude-scheduler)
    ```

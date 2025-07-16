@@ -410,7 +410,7 @@ pub fn app() -> Element {
             }
             p {
                 style: "margin: 5px 0; color: {text_color}; opacity: 0.8;",
-                "Claude Code自動実行スケジューラー"
+                "Claude Scheduler: Claude Code自動実行スケジューラー"
             }
             p {
                 style: "margin: 5px 0; color: {text_color}; opacity: 0.6; font-size: 0.8rem;",

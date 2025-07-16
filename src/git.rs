@@ -157,10 +157,10 @@ pub fn get_worktree_path(branch: &str) -> Result<String, std::io::Error> {
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
         .to_string_lossy()
         .to_string();
-    
+
     let expanded_path = crate::utils::expand_path(&current_dir);
-    let worktree_path = format!("{}/claude-schedular-{}", expanded_path, branch);
-    
+    let worktree_path = format!("{}/claude-scheduler-{}", expanded_path, branch);
+
     // worktreeが存在するか確認
     if std::path::Path::new(&worktree_path).exists() {
         Ok(worktree_path)
@@ -178,7 +178,7 @@ pub fn execute_command_in_worktree(
     execution_path: &str,
 ) -> Result<std::process::Output, std::io::Error> {
     let expanded_path = crate::utils::expand_path(execution_path);
-    let worktree_path = format!("{expanded_path}/claude-schedular-{branch}");
+    let worktree_path = format!("{expanded_path}/claude-scheduler-{branch}");
 
     // 指定されたパスが存在するか確認
     if !std::path::Path::new(&expanded_path).exists() {
@@ -201,7 +201,7 @@ pub fn execute_command_in_worktree(
         .current_dir(&expanded_path)
         .arg("worktree")
         .arg("add")
-        .arg(format!("claude-schedular-{branch}"))
+        .arg(format!("claude-scheduler-{branch}"))
         .arg(branch)
         .output();
 

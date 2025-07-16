@@ -1,44 +1,58 @@
-mod components;
-mod git;
-mod models;
-mod utils;
 mod cli;
 mod cli_commands;
 mod cli_handlers;
+mod components;
 mod config;
 mod database;
+mod git;
+mod models;
+mod utils;
 
-use clap::Parser;
 use anyhow::Result;
+use clap::Parser;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Check if running in CLI mode
     let args: Vec<String> = std::env::args().collect();
-    
+
     if args.len() > 1 {
         // CLI mode
         env_logger::init();
-        
+
         let cli_args = cli::Cli::parse();
-        
+
         // Load configuration
         let config = config::Config::load().await?;
-        
+
         // Initialize database
         let db = database::Database::new(&config.database_path()).await?;
-        
+
         match cli_args.command {
-            cli::Commands::Exec { command, mode, branch, worktree } => {
+            cli::Commands::Exec {
+                command,
+                mode,
+                branch,
+                worktree,
+            } => {
                 cli_commands::execute_command_immediate(
                     &command,
                     &mode,
                     branch.as_deref(),
                     worktree,
                     cli_args.verbose,
-                ).await?;
+                )
+                .await?;
             }
-            cli::Commands::Schedule { command, time, date, mode, branch, worktree, memo } => {
+            cli::Commands::Schedule {
+                command,
+                time,
+                date,
+                mode,
+                branch,
+                worktree,
+                memo,
+            } => {
                 cli_commands::schedule_command(
                     &db,
                     &command,
@@ -48,17 +62,25 @@ async fn main() -> Result<()> {
                     branch.as_deref(),
                     worktree,
                     memo.as_deref(),
-                ).await?;
+                )
+                .await?;
             }
-            cli::Commands::List { status, format, limit } => {
-                cli_handlers::list_schedules(
-                    &db,
-                    status.as_deref(),
-                    &format,
-                    limit,
-                ).await?;
+            cli::Commands::List {
+                status,
+                format,
+                limit,
+            } => {
+                cli_handlers::list_schedules(&db, status.as_deref(), &format, limit).await?;
             }
-            cli::Commands::History { status, exec_type, branch, format, limit, from, to } => {
+            cli::Commands::History {
+                status,
+                exec_type,
+                branch,
+                format,
+                limit,
+                from,
+                to,
+            } => {
                 cli_handlers::show_history(
                     &db,
                     status.as_deref(),
@@ -68,14 +90,21 @@ async fn main() -> Result<()> {
                     limit,
                     from,
                     to,
-                ).await?;
+                )
+                .await?;
             }
-            cli::Commands::Daemon { port, interval, pid_file, log_file, detach } => {
+            cli::Commands::Daemon {
+                port,
+                interval,
+                pid_file,
+                log_file,
+                detach,
+            } => {
                 if detach {
                     // TODO: Implement proper daemonization
                     eprintln!("Detach mode not yet implemented. Running in foreground.");
                 }
-                
+
                 cli_handlers::run_daemon(
                     &db,
                     port,
@@ -83,41 +112,48 @@ async fn main() -> Result<()> {
                     pid_file.as_deref(),
                     log_file.as_deref(),
                     detach,
-                ).await?;
+                )
+                .await?;
             }
-            cli::Commands::Config { action } => {
-                match action {
-                    cli::ConfigAction::Show => {
-                        let all_config = db.get_all_config().await?;
-                        for (key, value) in all_config {
-                            println!("{} = {}", key, value);
-                        }
-                    }
-                    cli::ConfigAction::Get { key } => {
-                        if let Some(value) = db.get_config(&key).await? {
-                            println!("{}", value);
-                        } else {
-                            eprintln!("Key '{}' not found", key);
-                            std::process::exit(1);
-                        }
-                    }
-                    cli::ConfigAction::Set { key, value } => {
-                        db.set_config(&key, &value).await?;
-                        println!("✅ Configuration updated: {} = {}", key, value);
+            cli::Commands::Config { action } => match action {
+                cli::ConfigAction::Show => {
+                    let all_config = db.get_all_config().await?;
+                    for (key, value) in all_config {
+                        println!("{} = {}", key, value);
                     }
                 }
-            }
+                cli::ConfigAction::Get { key } => {
+                    if let Some(value) = db.get_config(&key).await? {
+                        println!("{}", value);
+                    } else {
+                        eprintln!("Key '{}' not found", key);
+                        std::process::exit(1);
+                    }
+                }
+                cli::ConfigAction::Set { key, value } => {
+                    db.set_config(&key, &value).await?;
+                    println!("✅ Configuration updated: {} = {}", key, value);
+                }
+            },
         }
     } else {
         // GUI mode
-        println!("Starting Claude Scheduler...");
-        println!("Initializing Dioxus application...");
-        println!("Open http://localhost:8080 in your browser to access the application.");
+        #[cfg(feature = "gui")]
+        {
+            use dioxus_desktop::Config;
+            println!("Starting Claude Scheduler...");
+            println!("Initializing Claude Scheduler application...");
+            println!("Open http://localhost:8080 in your browser to access the application.");
 
-        dioxus::launch(components::app);
+            dioxus_desktop::launch_with_props(
+                components::app,
+                (),
+                Config::new().with_window_title("Claude Scheduler"),
+            );
 
-        println!("Dioxus application ended.");
+            println!("Claude Scheduler application ended.");
+        }
     }
-    
+
     Ok(())
 }

@@ -1,12 +1,12 @@
-pub mod components;
-pub mod git;
-pub mod models;
-pub mod utils;
 pub mod cli;
 pub mod cli_commands;
 pub mod cli_handlers;
+pub mod components;
 pub mod config;
 pub mod database;
+pub mod git;
+pub mod models;
+pub mod utils;
 
 #[cfg(test)]
 mod tests {

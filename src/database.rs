@@ -3,7 +3,7 @@ use chrono::{DateTime, Local};
 use sqlx::sqlite::SqlitePool;
 use std::path::Path;
 
-use crate::models::{Schedule, ScheduleStatus, ExecutionHistory, ExecutionType, ExecutionStatus};
+use crate::models::{ExecutionHistory, ExecutionStatus, ExecutionType, Schedule, ScheduleStatus};
 
 pub struct Database {
     pool: SqlitePool,
@@ -100,25 +100,28 @@ impl Database {
         Ok(())
     }
 
-    pub async fn get_schedules(&self, status_filter: Option<ScheduleStatus>, limit: Option<usize>) -> Result<Vec<Schedule>> {
+    pub async fn get_schedules(
+        &self,
+        status_filter: Option<ScheduleStatus>,
+        limit: Option<usize>,
+    ) -> Result<Vec<Schedule>> {
         let mut query = "SELECT * FROM schedules".to_string();
-        
+
         if let Some(status) = status_filter {
             query.push_str(&format!(" WHERE status = '{}'", status.to_string()));
         }
-        
+
         query.push_str(" ORDER BY created_at DESC");
-        
+
         if let Some(limit) = limit {
             query.push_str(&format!(" LIMIT {}", limit));
         }
 
-        let rows = sqlx::query(&query)
-            .fetch_all(&self.pool)
-            .await?;
+        let rows = sqlx::query(&query).fetch_all(&self.pool).await?;
 
-        let schedules = rows.into_iter().map(|row| {
-            Schedule {
+        let schedules = rows
+            .into_iter()
+            .map(|row| Schedule {
                 id: sqlx::Row::get(&row, "id"),
                 command: sqlx::Row::get(&row, "command"),
                 scheduled_time: sqlx::Row::get(&row, "scheduled_time"),
@@ -127,9 +130,12 @@ impl Database {
                 status: ScheduleStatus::from_string(&sqlx::Row::get::<String, _>(&row, "status")),
                 is_shell_mode: sqlx::Row::get::<i32, _>(&row, "is_shell_mode") != 0,
                 branch: sqlx::Row::get(&row, "branch"),
-                execution_path: std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).to_string_lossy().to_string(),
-            }
-        }).collect();
+                execution_path: std::env::current_dir()
+                    .unwrap_or_else(|_| std::path::PathBuf::from("."))
+                    .to_string_lossy()
+                    .to_string(),
+            })
+            .collect();
 
         Ok(schedules)
     }
@@ -180,61 +186,74 @@ impl Database {
         limit: Option<usize>,
     ) -> Result<Vec<ExecutionHistory>> {
         let mut query = "SELECT * FROM execution_history WHERE 1=1".to_string();
-        
+
         if let Some(status) = status_filter {
             query.push_str(&format!(" AND status = '{}'", status.to_string()));
         }
-        
+
         if let Some(exec_type) = type_filter {
-            query.push_str(&format!(" AND execution_type = '{}'", exec_type.to_string()));
+            query.push_str(&format!(
+                " AND execution_type = '{}'",
+                exec_type.to_string()
+            ));
         }
-        
+
         if let Some(branch) = branch_filter {
             query.push_str(&format!(" AND branch = '{}'", branch));
         }
-        
+
         if let Some(from) = from_date {
-            query.push_str(&format!(" AND executed_at >= '{}'", from.format("%Y-%m-%d %H:%M:%S")));
+            query.push_str(&format!(
+                " AND executed_at >= '{}'",
+                from.format("%Y-%m-%d %H:%M:%S")
+            ));
         }
-        
+
         if let Some(to) = to_date {
-            query.push_str(&format!(" AND executed_at <= '{}'", to.format("%Y-%m-%d %H:%M:%S")));
+            query.push_str(&format!(
+                " AND executed_at <= '{}'",
+                to.format("%Y-%m-%d %H:%M:%S")
+            ));
         }
-        
+
         query.push_str(" ORDER BY executed_at DESC");
-        
+
         if let Some(limit) = limit {
             query.push_str(&format!(" LIMIT {}", limit));
         }
 
-        let rows = sqlx::query(&query)
-            .fetch_all(&self.pool)
-            .await?;
+        let rows = sqlx::query(&query).fetch_all(&self.pool).await?;
 
-        let history = rows.into_iter().map(|row| {
-            ExecutionHistory {
+        let history = rows
+            .into_iter()
+            .map(|row| ExecutionHistory {
                 id: sqlx::Row::get(&row, "id"),
                 command: sqlx::Row::get(&row, "command"),
                 executed_at: sqlx::Row::get(&row, "executed_at"),
-                execution_type: ExecutionType::from_string(&sqlx::Row::get::<String, _>(&row, "execution_type")),
+                execution_type: ExecutionType::from_string(&sqlx::Row::get::<String, _>(
+                    &row,
+                    "execution_type",
+                )),
                 status: ExecutionStatus::from_string(&sqlx::Row::get::<String, _>(&row, "status")),
                 output: sqlx::Row::get(&row, "output"),
                 branch: sqlx::Row::get(&row, "branch"),
-                execution_path: std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).to_string_lossy().to_string(),
-            }
-        }).collect();
+                execution_path: std::env::current_dir()
+                    .unwrap_or_else(|_| std::path::PathBuf::from("."))
+                    .to_string_lossy()
+                    .to_string(),
+            })
+            .collect();
 
         Ok(history)
     }
 
     // Configuration methods
     pub async fn get_config(&self, key: &str) -> Result<Option<String>> {
-        let result = sqlx::query_as::<_, (String,)>(
-            "SELECT value FROM configuration WHERE key = ?"
-        )
-        .bind(key)
-        .fetch_optional(&self.pool)
-        .await?;
+        let result =
+            sqlx::query_as::<_, (String,)>("SELECT value FROM configuration WHERE key = ?")
+                .bind(key)
+                .fetch_optional(&self.pool)
+                .await?;
 
         Ok(result.map(|(value,)| value))
     }
@@ -256,11 +275,11 @@ impl Database {
 
     pub async fn get_all_config(&self) -> Result<Vec<(String, String)>> {
         let rows = sqlx::query_as::<_, (String, String)>(
-            "SELECT key, value FROM configuration ORDER BY key"
+            "SELECT key, value FROM configuration ORDER BY key",
         )
         .fetch_all(&self.pool)
         .await?;
 
         Ok(rows)
     }
-} 
+}
