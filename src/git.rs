@@ -150,13 +150,13 @@ pub fn execute_command_in_worktree(
     execution_path: &str,
 ) -> Result<std::process::Output, std::io::Error> {
     let expanded_path = crate::utils::expand_path(execution_path);
-    let worktree_path = format!("{}/claude-schedular-{}", expanded_path, branch);
+    let worktree_path = format!("{expanded_path}/claude-schedular-{branch}");
 
     // 指定されたパスが存在するか確認
     if !std::path::Path::new(&expanded_path).exists() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("指定されたディレクトリが見つかりません: {}", expanded_path),
+            format!("指定されたディレクトリが見つかりません: {expanded_path}"),
         ));
     }
 
@@ -164,10 +164,7 @@ pub fn execute_command_in_worktree(
     if !is_git_repository(&expanded_path) {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            format!(
-                "指定されたディレクトリはgitリポジトリではありません: {}",
-                expanded_path
-            ),
+            format!("指定されたディレクトリはgitリポジトリではありません: {expanded_path}"),
         ));
     }
 
@@ -176,14 +173,14 @@ pub fn execute_command_in_worktree(
         .current_dir(&expanded_path)
         .arg("worktree")
         .arg("add")
-        .arg(&format!("claude-schedular-{}", branch))
+        .arg(format!("claude-schedular-{branch}"))
         .arg(branch)
         .output();
 
     let full_command = if is_shell_mode {
         command.to_string()
     } else {
-        format!("claude -p \"{}\"", command)
+        format!("claude -p \"{command}\"")
     };
 
     Command::new("sh")

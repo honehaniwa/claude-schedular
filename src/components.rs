@@ -53,12 +53,12 @@ fn schedule_checker(
                             let stderr = String::from_utf8_lossy(&output.stderr);
 
                             if output.status.success() {
-                                (ScheduleStatus::Completed, format!("{}\n{}", stdout, stderr))
+                                (ScheduleStatus::Completed, format!("{stdout}\n{stderr}"))
                             } else {
-                                (ScheduleStatus::Failed, format!("{}\n{}", stdout, stderr))
+                                (ScheduleStatus::Failed, format!("{stdout}\n{stderr}"))
                             }
                         }
-                        Err(e) => (ScheduleStatus::Failed, format!("エラー: {}", e)),
+                        Err(e) => (ScheduleStatus::Failed, format!("エラー: {e}")),
                     };
 
                     // スケジュールのステータスを更新
@@ -159,10 +159,9 @@ pub fn app() -> Element {
     let mut use_git_worktree = use_signal(|| false);
     let mut is_git_repo = use_signal(|| {
         crate::git::is_git_repository(
-            &std::env::current_dir()
+            std::env::current_dir()
                 .unwrap_or_else(|_| std::path::PathBuf::from("."))
-                .to_string_lossy()
-                .to_string(),
+                .to_string_lossy().as_ref(),
         )
     });
 
@@ -173,7 +172,7 @@ pub fn app() -> Element {
             .to_string_lossy()
             .to_string()
     });
-    let mut last_execution_path = use_signal(|| String::new());
+    let mut last_execution_path = use_signal(String::new);
 
     // 定期的なスケジュールチェック（5秒ごと）
     schedule_checker(schedules, execution_history);
@@ -200,7 +199,7 @@ pub fn app() -> Element {
                 let command = if shell_mode {
                     prompt.clone()
                 } else {
-                    format!("claude -p \"{}\"", prompt)
+                    format!("claude -p \"{prompt}\"")
                 };
                 execute_command_in_directory(&command, &exec_path)
             };
@@ -242,7 +241,7 @@ pub fn app() -> Element {
                             ExecutionType::Manual
                         },
                         status: exec_status,
-                        output: format!("{}\n{}", stdout, stderr),
+                        output: format!("{stdout}\n{stderr}"),
                         branch: if use_worktree {
                             branch.clone()
                         } else {
@@ -269,7 +268,7 @@ pub fn app() -> Element {
                             ExecutionType::Manual
                         },
                         status: ExecutionStatus::Failed,
-                        output: format!("エラー: {}", e),
+                        output: format!("エラー: {e}"),
                         branch: if use_worktree {
                             branch.clone()
                         } else {
@@ -505,11 +504,11 @@ pub fn app() -> Element {
 
                             button {
                                 onclick: move |_| {
-                                    let mut exec_path = execution_path.clone();
-                                    let mut last_exec_path = last_execution_path.clone();
-                                    let mut repo_state = is_git_repo.clone();
-                                    let mut branches = available_branches.clone();
-                                    let mut current_branch = selected_branch.clone();
+                                                        let mut exec_path = execution_path;
+                    let mut last_exec_path = last_execution_path;
+                    let mut repo_state = is_git_repo;
+                    let mut branches = available_branches;
+                    let mut current_branch = selected_branch;
 
                                     spawn(async move {
                                         if let Some(folder) = rfd::AsyncFileDialog::new()
