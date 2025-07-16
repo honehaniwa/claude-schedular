@@ -176,6 +176,8 @@ pub fn execute_command_in_worktree(
     branch: &str,
     is_shell_mode: bool,
     execution_path: &str,
+    claude_skip_permissions: bool,
+    claude_continue_from_last: bool,
 ) -> Result<std::process::Output, std::io::Error> {
     let expanded_path = crate::utils::expand_path(execution_path);
     let worktree_path = format!("{expanded_path}/claude-schedular-{branch}");
@@ -208,7 +210,14 @@ pub fn execute_command_in_worktree(
     let full_command = if is_shell_mode {
         command.to_string()
     } else {
-        format!("claude -p \"{command}\"")
+        let mut claude_cmd = String::from("claude");
+        if claude_skip_permissions {
+            claude_cmd.push_str(" --dangerously-skip-permissions");
+        }
+        if claude_continue_from_last {
+            claude_cmd.push_str(" -c");
+        }
+        format!("{} -p \"{}\"", claude_cmd, command)
     };
 
     Command::new("sh")

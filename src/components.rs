@@ -32,7 +32,14 @@ fn schedule_checker(
                     let command = if schedule.is_shell_mode {
                         schedule.command.clone()
                     } else {
-                        format!("claude -p \"{}\"", schedule.command)
+                        let mut claude_cmd = String::from("claude");
+                        if schedule.claude_skip_permissions {
+                            claude_cmd.push_str(" --dangerously-skip-permissions");
+                        }
+                        if schedule.claude_continue_from_last {
+                            claude_cmd.push_str(" -c");
+                        }
+                        format!("{} -p \"{}\"", claude_cmd, schedule.command)
                     };
 
                     let result =
@@ -42,6 +49,8 @@ fn schedule_checker(
                                 &schedule.branch,
                                 schedule.is_shell_mode,
                                 &schedule.execution_path,
+                                schedule.claude_skip_permissions,
+                                schedule.claude_continue_from_last,
                             )
                         } else {
                             execute_command_in_directory(&command, &schedule.execution_path)
@@ -82,6 +91,8 @@ fn schedule_checker(
                         output,
                         branch: schedule.branch.clone(),
                         execution_path: schedule.execution_path.clone(),
+                        claude_skip_permissions: schedule.claude_skip_permissions,
+                        claude_continue_from_last: schedule.claude_continue_from_last,
                     };
 
                     execution_history.with_mut(|h| h.push(history));
@@ -152,6 +163,10 @@ pub fn app() -> Element {
 
     // シェルモード実行用の状態
     let mut use_shell_mode = use_signal(|| false);
+    
+    // Claude実行オプション用の状態
+    let mut claude_skip_permissions = use_signal(|| false);
+    let mut claude_continue_from_last = use_signal(|| false);
 
     // branch選択用の状態
     let mut available_branches = use_signal(get_git_worktree_branches);
@@ -194,13 +209,20 @@ pub fn app() -> Element {
         spawn(async move {
             let result = if use_worktree && branch != "main" && branch != get_current_branch() {
                 // Git Worktreeを使用
-                execute_command_in_worktree(&prompt, &branch, shell_mode, &exec_path)
+                                        execute_command_in_worktree(&prompt, &branch, shell_mode, &exec_path, claude_skip_permissions(), claude_continue_from_last())
             } else {
                 // 通常の実行
                 let command = if shell_mode {
                     prompt.clone()
                 } else {
-                    format!("claude -p \"{prompt}\"")
+                    let mut claude_cmd = String::from("claude");
+                    if claude_skip_permissions() {
+                        claude_cmd.push_str(" --dangerously-skip-permissions");
+                    }
+                    if claude_continue_from_last() {
+                        claude_cmd.push_str(" -c");
+                    }
+                    format!("{} -p \"{}\"", claude_cmd, prompt)
                 };
                 execute_command_in_directory(&command, &exec_path)
             };
@@ -249,6 +271,8 @@ pub fn app() -> Element {
                             get_current_branch()
                         },
                         execution_path: exec_path.clone(),
+                        claude_skip_permissions: claude_skip_permissions(),
+                        claude_continue_from_last: claude_continue_from_last(),
                     };
                     execution_history.with_mut(|h| h.push(history));
 
@@ -276,6 +300,8 @@ pub fn app() -> Element {
                             get_current_branch()
                         },
                         execution_path: exec_path,
+                        claude_skip_permissions: claude_skip_permissions(),
+                        claude_continue_from_last: claude_continue_from_last(),
                     };
                     execution_history.with_mut(|h| h.push(history));
 
@@ -315,6 +341,8 @@ pub fn app() -> Element {
                     get_current_branch()
                 },
                 execution_path: execution_path(),
+                claude_skip_permissions: claude_skip_permissions(),
+                claude_continue_from_last: claude_continue_from_last(),
             };
 
             schedules.with_mut(|s| s.push(schedule));
@@ -687,18 +715,58 @@ pub fn app() -> Element {
                             }
                         }
 
-                        // コンパクトなモード切り替え
-                        label {
-                            style: "display: flex; align-items: center; cursor: pointer; color: {text_color}; font-size: 0.85rem;",
-                            input {
-                                r#type: "checkbox",
-                                checked: use_shell_mode(),
-                                onchange: move |evt| use_shell_mode.set(evt.checked()),
-                                style: "margin-right: 6px; transform: scale(0.9);",
+                        // モードオプション
+                        div {
+                            style: "display: flex; gap: 15px; align-items: center;",
+                            
+                            // Shell Mode切り替え
+                            label {
+                                style: "display: flex; align-items: center; cursor: pointer; color: {text_color}; font-size: 0.85rem;",
+                                input {
+                                    r#type: "checkbox",
+                                    checked: use_shell_mode(),
+                                    onchange: move |evt| use_shell_mode.set(evt.checked()),
+                                    style: "margin-right: 6px; transform: scale(0.9);",
+                                }
+                                span {
+                                    style: "color: {text_color}; opacity: 0.8;",
+                                    "Shell Mode"
+                                }
                             }
-                            span {
-                                style: "color: {text_color}; opacity: 0.8;",
-                                "Shell Mode"
+                            
+                            // Claude実行オプション（Shell Modeではない場合のみ表示）
+                            if !use_shell_mode() {
+                                // Skip Permissions
+                                label {
+                                    style: "display: flex; align-items: center; cursor: pointer; color: {text_color}; font-size: 0.85rem;",
+                                    input {
+                                        r#type: "checkbox",
+                                        checked: claude_skip_permissions(),
+                                        onchange: move |evt| claude_skip_permissions.set(evt.checked()),
+                                        style: "margin-right: 6px; transform: scale(0.9);",
+                                    }
+                                    span {
+                                        style: "color: {text_color}; opacity: 0.8;",
+                                        title: "Execute without confirmation prompt",
+                                        "Skip Permissions"
+                                    }
+                                }
+                                
+                                // Continue from Last
+                                label {
+                                    style: "display: flex; align-items: center; cursor: pointer; color: {text_color}; font-size: 0.85rem;",
+                                    input {
+                                        r#type: "checkbox",
+                                        checked: claude_continue_from_last(),
+                                        onchange: move |evt| claude_continue_from_last.set(evt.checked()),
+                                        style: "margin-right: 6px; transform: scale(0.9);",
+                                    }
+                                    span {
+                                        style: "color: {text_color}; opacity: 0.8;",
+                                        title: "Continue from previous Claude session",
+                                        "Continue (-c)"
+                                    }
+                                }
                             }
                         }
                     }

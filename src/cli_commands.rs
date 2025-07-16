@@ -14,6 +14,8 @@ pub async fn execute_command_immediate(
     branch: Option<&str>,
     worktree: bool,
     verbose: bool,
+    skip_permissions: bool,
+    continue_from_last: bool,
 ) -> Result<()> {
     let execution_path = if worktree && branch.is_some() {
         let branch_name = branch.unwrap();
@@ -29,7 +31,7 @@ pub async fn execute_command_immediate(
     }
 
     let is_shell_mode = mode.to_lowercase() == "shell";
-    let (success, output) = execute_command_internal(command, is_shell_mode, &execution_path).await?;
+    let (success, output) = execute_command_internal(command, is_shell_mode, &execution_path, skip_permissions, continue_from_last).await?;
 
     println!("\n{}", output);
     
@@ -49,6 +51,8 @@ pub async fn schedule_command(
     branch: Option<&str>,
     worktree: bool,
     memo: Option<&str>,
+    skip_permissions: bool,
+    continue_from_last: bool,
 ) -> Result<()> {
     // Parse date
     let target_date = match date.to_lowercase().as_str() {
@@ -95,6 +99,8 @@ pub async fn schedule_command(
         is_shell_mode: mode.to_lowercase() == "shell",
         branch: execution_branch.clone(),
         execution_path: std::env::current_dir()?.to_string_lossy().to_string(),
+        claude_skip_permissions: skip_permissions,
+        claude_continue_from_last: continue_from_last,
     };
 
     db.create_schedule(&schedule).await?;
@@ -112,6 +118,8 @@ pub async fn execute_command_internal(
     command: &str,
     is_shell_mode: bool,
     execution_path: &str,
+    skip_permissions: bool,
+    continue_from_last: bool,
 ) -> Result<(bool, String)> {
     let mut cmd = if is_shell_mode {
         if cfg!(target_os = "windows") {
@@ -125,6 +133,12 @@ pub async fn execute_command_internal(
         }
     } else {
         let mut cmd = Command::new("claude");
+        if skip_permissions {
+            cmd.arg("--dangerously-skip-permissions");
+        }
+        if continue_from_last {
+            cmd.arg("-c");
+        }
         cmd.arg("code").arg(command);
         cmd
     };

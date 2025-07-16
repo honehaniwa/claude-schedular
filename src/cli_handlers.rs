@@ -215,6 +215,8 @@ pub async fn run_daemon(
                             &schedule.command,
                             schedule.is_shell_mode,
                             &execution_path,
+                            schedule.claude_skip_permissions,
+                            schedule.claude_continue_from_last,
                         ).await?;
                         
                         // Update schedule status
@@ -234,9 +236,11 @@ pub async fn run_daemon(
                             execution_type: ExecutionType::FromSchedule,
                             status: if success { ExecutionStatus::Success } else { ExecutionStatus::Failed },
                             output,
-                            branch: schedule.branch.clone(),
-                            execution_path,
-                        };
+                                                    branch: schedule.branch.clone(),
+                        execution_path,
+                        claude_skip_permissions: schedule.claude_skip_permissions,
+                        claude_continue_from_last: schedule.claude_continue_from_last,
+                    };
                         
                         db.create_execution_history(&history).await?;
                         

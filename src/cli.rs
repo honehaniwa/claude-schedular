@@ -31,6 +31,14 @@ pub enum Commands {
         /// Enable Git worktree parallel execution
         #[arg(short, long)]
         worktree: bool,
+
+        /// Skip permissions check (--dangerously-skip-permissions)
+        #[arg(long)]
+        skip_permissions: bool,
+
+        /// Continue from last Claude session (-c)
+        #[arg(short = 'c', long)]
+        continue_from_last: bool,
     },
 
     /// Schedule a command for later execution
@@ -61,6 +69,14 @@ pub enum Commands {
         /// Add a memo
         #[arg(long)]
         memo: Option<String>,
+
+        /// Skip permissions check (--dangerously-skip-permissions)
+        #[arg(long)]
+        skip_permissions: bool,
+
+        /// Continue from last Claude session (-c)
+        #[arg(long)]
+        continue_from_last: bool,
     },
 
     /// List scheduled commands

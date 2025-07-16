@@ -114,6 +114,15 @@ cargo run
 # Git worktreeを使用して実行
 ./claude-scheduler exec -w -b feature-branch "run tests"
 
+# Claude実行時に確認をスキップ
+./claude-scheduler exec --skip-permissions "create a function"
+
+# 前回のClaudeセッションから継続
+./claude-scheduler exec -c "continue the implementation"
+
+# 両方のオプションを使用
+./claude-scheduler exec --skip-permissions -c "fix the bug"
+
 # スケジュール登録（明日の15:30に実行）
 ./claude-scheduler schedule "backup database" -t 15:30 -d tomorrow
 
@@ -140,6 +149,8 @@ OPTIONS:
   -m, --mode <MODE>        実行モード [claude|shell] (default: claude)
   -b, --branch <BRANCH>    Git worktreeブランチ指定
   -w, --worktree          Git worktree並列実行を有効化
+  --skip-permissions       Claude実行時の確認をスキップ
+  -c, --continue-from-last 前回のClaudeセッションから継続
   -v, --verbose           詳細出力
 ```
 
@@ -154,6 +165,8 @@ OPTIONS:
   -b, --branch <BRANCH>   Git worktreeブランチ指定
   -w, --worktree         Git worktree並列実行を有効化
   --memo <MEMO>          メモ追加
+  --skip-permissions      Claude実行時の確認をスキップ
+  --continue-from-last    前回のClaudeセッションから継続
 ```
 
 ##### `list` - スケジュール一覧

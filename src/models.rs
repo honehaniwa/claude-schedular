@@ -12,6 +12,10 @@ pub struct Schedule {
     pub is_shell_mode: bool,    // シェルモード実行フラグ
     pub branch: String,         // git worktreeのbranch
     pub execution_path: String, // 実行ディレクトリパス
+    #[serde(default)]
+    pub claude_skip_permissions: bool, // --dangerously-skip-permissions フラグ
+    #[serde(default)]
+    pub claude_continue_from_last: bool, // -c フラグ
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,6 +35,10 @@ pub struct ExecutionHistory {
     pub output: String,
     pub branch: String,         // git worktreeのbranch
     pub execution_path: String, // 実行ディレクトリパス
+    #[serde(default)]
+    pub claude_skip_permissions: bool, // --dangerously-skip-permissions フラグ
+    #[serde(default)]
+    pub claude_continue_from_last: bool, // -c フラグ
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -63,6 +71,8 @@ impl Default for Schedule {
                 .unwrap_or_else(|_| std::path::PathBuf::from("."))
                 .to_string_lossy()
                 .to_string(),
+            claude_skip_permissions: false,
+            claude_continue_from_last: false,
         }
     }
 }

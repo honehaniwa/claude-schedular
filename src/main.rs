@@ -11,8 +11,7 @@ mod database;
 use clap::Parser;
 use anyhow::Result;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // Check if running in CLI mode
     let args: Vec<String> = std::env::args().collect();
     
@@ -22,6 +21,10 @@ async fn main() -> Result<()> {
         
         let cli_args = cli::Cli::parse();
         
+        // Create a new runtime for CLI mode
+        let runtime = tokio::runtime::Runtime::new()?;
+        runtime.block_on(async {
+        
         // Load configuration
         let config = config::Config::load().await?;
         
@@ -29,16 +32,18 @@ async fn main() -> Result<()> {
         let db = database::Database::new(&config.database_path()).await?;
         
         match cli_args.command {
-            cli::Commands::Exec { command, mode, branch, worktree } => {
+            cli::Commands::Exec { command, mode, branch, worktree, skip_permissions, continue_from_last } => {
                 cli_commands::execute_command_immediate(
                     &command,
                     &mode,
                     branch.as_deref(),
                     worktree,
                     cli_args.verbose,
+                    skip_permissions,
+                    continue_from_last,
                 ).await?;
             }
-            cli::Commands::Schedule { command, time, date, mode, branch, worktree, memo } => {
+            cli::Commands::Schedule { command, time, date, mode, branch, worktree, memo, skip_permissions, continue_from_last } => {
                 cli_commands::schedule_command(
                     &db,
                     &command,
@@ -48,6 +53,8 @@ async fn main() -> Result<()> {
                     branch.as_deref(),
                     worktree,
                     memo.as_deref(),
+                    skip_permissions,
+                    continue_from_last,
                 ).await?;
             }
             cli::Commands::List { status, format, limit } => {
@@ -108,6 +115,8 @@ async fn main() -> Result<()> {
                 }
             }
         }
+        Ok::<(), anyhow::Error>(())
+        })?
     } else {
         // GUI mode
         println!("Starting Claude Scheduler...");
