@@ -2,11 +2,11 @@
 
 Claude AIコマンドとGit Worktreeに対応したWebベースのスケジューラー - Dioxusで構築
 
-[![CI/CD](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/claude-scheduler/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org/)
 [![Dioxus](https://img.shields.io/badge/dioxus-0.5-green.svg)](https://dioxuslabs.com/)
-[![codecov](https://codecov.io/gh/your-username/claude-scheduler/branch/main/graph/badge.svg)](https://codecov.io/gh/your-username/claude-scheduler)
+[![codecov](https://codecov.io/gh/honehaniwa/claude-scheduler/branch/main/graph/badge.svg)](https://codecov.io/gh/honehaniwa/claude-scheduler)
 
 ## 概要
 
@@ -52,7 +52,7 @@ Claude SchedulerはClaude AIコマンドやシェルコマンドをGUIで簡単�
 ### ソースからビルド
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-username/claude-scheduler.git
+git clone https://github.com/honehaniwa/claude-scheduler.git
 cd claude-scheduler
 
 # プロジェクトをビルド
@@ -63,7 +63,7 @@ cargo run
 ```
 
 ### ビルド済みバイナリの使用
-[リリースページ](https://github.com/your-username/claude-scheduler/releases)から最新版をダウンロードしてください。
+[リリースページ](https://github.com/honehaniwa/claude-scheduler/releases)から最新版をダウンロードしてください。
 
 ## 使い方
 
@@ -103,7 +103,7 @@ cargo run
 ### 開発環境のセットアップ
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-username/claude-scheduler.git
+git clone https://github.com/honehaniwa/claude-scheduler.git
 cd claude-scheduler
 
 # 依存関係をインストール
