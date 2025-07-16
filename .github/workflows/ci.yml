@@ -146,7 +146,7 @@ jobs:
           libayatana-appindicator3-dev \
           librsvg2-dev \
           libxdo-dev
-    
+      
     - name: Install Rust
       uses: dtolnay/rust-toolchain@nightly
       with:
@@ -184,7 +184,7 @@ jobs:
           pkg-config \
           build-essential \
           libssl-dev
-    
+      
     - name: Install system dependencies (macOS - CLI only)
       if: matrix.os == 'macos-latest'
       run: |
@@ -312,7 +312,7 @@ jobs:
           libayatana-appindicator3-dev \
           librsvg2-dev \
           libxdo-dev
-    
+      
     - name: Install system dependencies (Ubuntu - CLI only)
       if: matrix.os == 'ubuntu-latest'
       run: |
