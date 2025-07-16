@@ -143,6 +143,7 @@ pub fn get_current_branch() -> String {
 }
 
 /// 現在のbranchを取得（Result版）
+#[allow(dead_code)]
 pub fn get_current_branch_result() -> Result<String, std::io::Error> {
     let current_dir = std::env::current_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from("."))

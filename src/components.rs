@@ -1,8 +1,13 @@
+#[cfg(feature = "gui")]
 use chrono::Local;
+#[cfg(feature = "gui")]
 use dioxus::prelude::*;
 
+#[cfg(feature = "gui")]
 use crate::git::*;
+#[cfg(feature = "gui")]
 use crate::models::*;
+#[cfg(feature = "gui")]
 use crate::utils::*;
 
 /// スケジュールを5秒ごとにチェックする関数
@@ -1201,4 +1206,9 @@ pub fn app() -> Element {
             }
         }
     }
+}
+
+#[cfg(not(feature = "gui"))]
+pub fn app() -> ! {
+    panic!("GUI mode is not available. Please compile with --features gui");
 }

@@ -1,3 +1,4 @@
+#[cfg(feature = "gui")]
 mod components;
 mod git;
 mod models;
@@ -119,13 +120,23 @@ fn main() -> Result<()> {
         })?
     } else {
         // GUI mode
-        println!("Starting Claude Scheduler...");
-        println!("Initializing Dioxus application...");
-        println!("Open http://localhost:8080 in your browser to access the application.");
+        #[cfg(feature = "gui")]
+        {
+            println!("Starting Claude Scheduler...");
+            println!("Initializing Dioxus application...");
+            println!("Open http://localhost:8080 in your browser to access the application.");
 
-        dioxus::launch(components::app);
+            dioxus::launch(components::app);
 
-        println!("Dioxus application ended.");
+            println!("Dioxus application ended.");
+        }
+        
+        #[cfg(not(feature = "gui"))]
+        {
+            eprintln!("GUI mode is not available. Please install with GUI features enabled.");
+            eprintln!("Use: cargo install --features gui");
+            std::process::exit(1);
+        }
     }
     
     Ok(())

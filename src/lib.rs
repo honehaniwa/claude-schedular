@@ -1,3 +1,4 @@
+#[cfg(feature = "gui")]
 pub mod components;
 pub mod git;
 pub mod models;
