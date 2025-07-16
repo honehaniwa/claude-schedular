@@ -2,11 +2,13 @@ use chrono::{Duration, Local, NaiveDateTime, TimeZone};
 use std::process::{Command, Output};
 
 /// 現在時刻を"YYYY-MM-DDTHH:MM"形式で取得
+#[allow(dead_code)]
 pub fn get_current_datetime() -> String {
     Local::now().format("%Y-%m-%dT%H:%M").to_string()
 }
 
 /// 時刻文字列を比較
+#[allow(dead_code)]
 pub fn is_time_reached(scheduled_time: &str) -> bool {
     if let Ok(scheduled_dt) = NaiveDateTime::parse_from_str(scheduled_time, "%Y-%m-%dT%H:%M") {
         if let Some(scheduled_local) = Local.from_local_datetime(&scheduled_dt).single() {
@@ -17,6 +19,7 @@ pub fn is_time_reached(scheduled_time: &str) -> bool {
 }
 
 /// 今日/明日 + 時刻から datetime-local形式に変換
+#[allow(dead_code)]
 pub fn build_scheduled_time(is_tomorrow: bool, hour: u32, minute: u32) -> String {
     let now = Local::now();
     let target_date = if is_tomorrow {
@@ -34,6 +37,7 @@ pub fn build_scheduled_time(is_tomorrow: bool, hour: u32, minute: u32) -> String
 }
 
 /// 指定されたディレクトリでコマンドを実行
+#[allow(dead_code)]
 pub fn execute_command_in_directory(
     command: &str,
     directory: &str,
@@ -50,6 +54,7 @@ pub fn execute_command_in_directory(
 }
 
 /// パスが有効なディレクトリかどうかをチェック
+#[allow(dead_code)]
 pub fn is_valid_directory(path: &str) -> bool {
     std::path::Path::new(path).is_dir()
 }
