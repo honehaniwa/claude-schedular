@@ -161,7 +161,8 @@ pub fn app() -> Element {
         crate::git::is_git_repository(
             std::env::current_dir()
                 .unwrap_or_else(|_| std::path::PathBuf::from("."))
-                .to_string_lossy().as_ref(),
+                .to_string_lossy()
+                .as_ref(),
         )
     });
 
