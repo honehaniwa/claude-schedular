@@ -34,15 +34,18 @@ pub fn build_scheduled_time(is_tomorrow: bool, hour: u32, minute: u32) -> String
 }
 
 /// 指定されたディレクトリでコマンドを実行
-pub fn execute_command_in_directory(command: &str, directory: &str) -> Result<Output, std::io::Error> {
+pub fn execute_command_in_directory(
+    command: &str,
+    directory: &str,
+) -> Result<Output, std::io::Error> {
     let mut cmd = Command::new("sh");
     cmd.arg("-c").arg(command);
-    
+
     // 指定されたディレクトリが存在するかチェック
     if std::path::Path::new(directory).exists() {
         cmd.current_dir(directory);
     }
-    
+
     cmd.output()
 }
 

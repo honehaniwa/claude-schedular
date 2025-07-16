@@ -157,10 +157,14 @@ pub fn app() -> Element {
     let mut available_branches = use_signal(get_git_worktree_branches);
     let mut selected_branch = use_signal(get_current_branch);
     let mut use_git_worktree = use_signal(|| false);
-    let mut is_git_repo = use_signal(|| crate::git::is_git_repository(&std::env::current_dir()
-        .unwrap_or_else(|_| std::path::PathBuf::from("."))
-        .to_string_lossy()
-        .to_string()));
+    let mut is_git_repo = use_signal(|| {
+        crate::git::is_git_repository(
+            &std::env::current_dir()
+                .unwrap_or_else(|_| std::path::PathBuf::from("."))
+                .to_string_lossy()
+                .to_string(),
+        )
+    });
 
     // 実行パス用の状態
     let mut execution_path = use_signal(|| {
@@ -329,7 +333,7 @@ pub fn app() -> Element {
         let path = execution_path();
         let is_repo = crate::git::is_git_repository(&path);
         is_git_repo.set(is_repo);
-        
+
         if is_repo {
             let branches = crate::git::get_git_worktree_branches_in_directory(&path);
             let current = crate::git::get_current_branch_in_directory(&path);
@@ -433,7 +437,7 @@ pub fn app() -> Element {
 
                     div {
                         style: "margin-bottom: 10px;",
-                        
+
                         div {
                             style: "display: flex; align-items: center; gap: 10px; margin-bottom: 8px;",
 
@@ -448,15 +452,15 @@ pub fn app() -> Element {
                                 oninput: move |evt| {
                                     let path = crate::utils::expand_path(&evt.value());
                                     execution_path.set(path.clone());
-                                    
+
                                     // 有効なパスの場合は最後の実行パスとして保存
                                     if crate::utils::is_valid_directory(&path) {
                                         last_execution_path.set(path.clone());
-                                        
+
                                         // gitリポジトリかチェックし、ブランチ情報を更新
                                         let is_repo = crate::git::is_git_repository(&path);
                                         is_git_repo.set(is_repo);
-                                        
+
                                         if is_repo {
                                             let branches = crate::git::get_git_worktree_branches_in_directory(&path);
                                             let current = crate::git::get_current_branch_in_directory(&path);
@@ -480,11 +484,11 @@ pub fn app() -> Element {
                                         .to_string();
                                     execution_path.set(current_dir.clone());
                                     last_execution_path.set(current_dir.clone());
-                                    
+
                                     // gitリポジトリかチェックし、ブランチ情報を更新
                                     let is_repo = crate::git::is_git_repository(&current_dir);
                                     is_git_repo.set(is_repo);
-                                    
+
                                     if is_repo {
                                         let branches = crate::git::get_git_worktree_branches_in_directory(&current_dir);
                                         let current = crate::git::get_current_branch_in_directory(&current_dir);
@@ -506,21 +510,21 @@ pub fn app() -> Element {
                                     let mut repo_state = is_git_repo.clone();
                                     let mut branches = available_branches.clone();
                                     let mut current_branch = selected_branch.clone();
-                                    
+
                                     spawn(async move {
                                         if let Some(folder) = rfd::AsyncFileDialog::new()
                                             .set_title("実行ディレクトリを選択")
                                             .pick_folder()
-                                            .await 
+                                            .await
                                         {
                                             let path = folder.path().to_string_lossy().to_string();
                                             exec_path.set(path.clone());
                                             last_exec_path.set(path.clone());
-                                            
+
                                             // gitリポジトリかチェックし、ブランチ情報を更新
                                             let is_repo = crate::git::is_git_repository(&path);
                                             repo_state.set(is_repo);
-                                            
+
                                             if is_repo {
                                                 let repo_branches = crate::git::get_git_worktree_branches_in_directory(&path);
                                                 let current = crate::git::get_current_branch_in_directory(&path);
@@ -583,7 +587,7 @@ pub fn app() -> Element {
                         style: "display: flex; justify-content: space-between; align-items: center;",
 
                         label {
-                            style: format!("display: flex; align-items: center; cursor: {}; color: {}; font-size: 0.85rem;", 
+                            style: format!("display: flex; align-items: center; cursor: {}; color: {}; font-size: 0.85rem;",
                                 if is_git_repo() { "pointer" } else { "not-allowed" },
                                 if is_git_repo() { text_color } else { "#888888" }),
                             input {
@@ -598,7 +602,7 @@ pub fn app() -> Element {
                                 style: "margin-right: 8px; transform: scale(0.9);",
                             }
                             span {
-                                style: format!("font-weight: bold; color: {};", 
+                                style: format!("font-weight: bold; color: {};",
                                     if is_git_repo() { text_color } else { "#888888" }),
                                 if is_git_repo() {
                                     "🌿 Git Worktree並列実行"
@@ -894,7 +898,7 @@ pub fn app() -> Element {
                                                 {schedule.branch.clone()}
                                             }
                                         }
-                                        
+
                                         div {
                                             style: "font-size: 0.75rem; opacity: 0.7; color: {text_color}; margin-bottom: 5px;",
                                             "📁 実行パス: "
@@ -999,7 +1003,7 @@ pub fn app() -> Element {
                                                 "実行中..."
                                             }
                                         }
-                                        
+
                                         div {
                                             style: "font-size: 0.75rem; opacity: 0.7; color: {text_color}; margin-bottom: 5px;",
                                             "📁 実行パス: "
@@ -1072,7 +1076,7 @@ pub fn app() -> Element {
                                                 {history.status.to_string()}
                                             }
                                         }
-                                        
+
                                         div {
                                             style: "font-size: 0.75rem; opacity: 0.7; color: {text_color}; margin-bottom: 5px;",
                                             "📁 実行パス: "

@@ -8,8 +8,8 @@ pub struct Schedule {
     pub _memo: String,
     pub created_at: String,
     pub status: ScheduleStatus,
-    pub is_shell_mode: bool, // シェルモード実行フラグ
-    pub branch: String,      // git worktreeのbranch
+    pub is_shell_mode: bool,    // シェルモード実行フラグ
+    pub branch: String,         // git worktreeのbranch
     pub execution_path: String, // 実行ディレクトリパス
 }
 
@@ -28,7 +28,7 @@ pub struct ExecutionHistory {
     pub execution_type: ExecutionType,
     pub status: ExecutionStatus,
     pub output: String,
-    pub branch: String, // git worktreeのbranch
+    pub branch: String,         // git worktreeのbranch
     pub execution_path: String, // 実行ディレクトリパス
 }
 

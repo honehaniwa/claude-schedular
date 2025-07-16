@@ -3,11 +3,11 @@ use std::process::Command;
 /// 指定されたディレクトリがgitリポジトリかチェック
 pub fn is_git_repository(directory: &str) -> bool {
     let expanded_path = crate::utils::expand_path(directory);
-    
+
     if !std::path::Path::new(&expanded_path).exists() {
         return false;
     }
-    
+
     match Command::new("git")
         .current_dir(&expanded_path)
         .arg("rev-parse")
@@ -22,7 +22,7 @@ pub fn is_git_repository(directory: &str) -> bool {
 /// 指定されたディレクトリのgit worktreeのbranchを取得する関数
 pub fn get_git_worktree_branches_in_directory(directory: &str) -> Vec<String> {
     let expanded_path = crate::utils::expand_path(directory);
-    
+
     if !is_git_repository(&expanded_path) {
         return vec!["main".to_string()];
     }
@@ -53,23 +53,26 @@ pub fn get_git_worktree_branches_in_directory(directory: &str) -> Vec<String> {
                     .current_dir(&expanded_path)
                     .arg("branch")
                     .arg("-a")
-                    .output() 
+                    .output()
                 {
                     if branch_output.status.success() {
                         let branch_stdout = String::from_utf8_lossy(&branch_output.stdout);
                         for line in branch_stdout.lines() {
                             let mut branch_name = line.trim().replace("*", "").trim().to_string();
-                            
+
                             // リモートブランチの場合、origin/プレフィックスを削除
                             if branch_name.starts_with("remotes/origin/") {
-                                branch_name = branch_name.strip_prefix("remotes/origin/").unwrap_or(&branch_name).to_string();
+                                branch_name = branch_name
+                                    .strip_prefix("remotes/origin/")
+                                    .unwrap_or(&branch_name)
+                                    .to_string();
                             }
-                            
+
                             // refs/heads/プレフィックスを削除
                             let clean_branch = branch_name
                                 .strip_prefix("refs/heads/")
                                 .unwrap_or(&branch_name);
-                                
+
                             if !clean_branch.is_empty() && clean_branch != "HEAD" {
                                 branches.push(clean_branch.to_string());
                             }
@@ -106,7 +109,7 @@ pub fn get_git_worktree_branches() -> Vec<String> {
 /// 指定されたディレクトリの現在のbranchを取得
 pub fn get_current_branch_in_directory(directory: &str) -> String {
     let expanded_path = crate::utils::expand_path(directory);
-    
+
     if !is_git_repository(&expanded_path) {
         return "main".to_string();
     }
@@ -153,15 +156,18 @@ pub fn execute_command_in_worktree(
     if !std::path::Path::new(&expanded_path).exists() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("指定されたディレクトリが見つかりません: {}", expanded_path)
+            format!("指定されたディレクトリが見つかりません: {}", expanded_path),
         ));
     }
-    
+
     // 指定されたディレクトリがgitリポジトリかチェック
     if !is_git_repository(&expanded_path) {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            format!("指定されたディレクトリはgitリポジトリではありません: {}", expanded_path)
+            format!(
+                "指定されたディレクトリはgitリポジトリではありません: {}",
+                expanded_path
+            ),
         ));
     }
 
