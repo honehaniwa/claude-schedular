@@ -16,7 +16,7 @@ impl Database {
             std::fs::create_dir_all(parent)?;
         }
 
-        let database_url = format!("sqlite:{}", path.display());
+        let database_url = format!("sqlite:{}?mode=rwc", path.display());
         let pool = SqlitePool::connect(&database_url).await?;
 
         let db = Self { pool };
@@ -94,7 +94,7 @@ impl Database {
         .bind(&schedule.scheduled_time)
         .bind(&schedule._memo)
         .bind(&schedule.created_at)
-        .bind(schedule.status.to_string())
+        .bind(schedule.status.to_db_string())
         .bind(schedule.is_shell_mode as i32)
         .bind(&schedule.branch)
         .bind(&schedule.execution_path)
@@ -114,13 +114,13 @@ impl Database {
         let mut query = "SELECT * FROM schedules".to_string();
 
         if let Some(status) = status_filter {
-            query.push_str(&format!(" WHERE status = '{}'", status.to_string()));
+            query.push_str(&format!(" WHERE status = '{}'", status.to_db_string()));
         }
 
         query.push_str(" ORDER BY created_at DESC");
 
         if let Some(limit) = limit {
-            query.push_str(&format!(" LIMIT {}", limit));
+            query.push_str(&format!(" LIMIT {limit}"));
         }
 
         let rows = sqlx::query(&query).fetch_all(&self.pool).await?;
@@ -166,7 +166,7 @@ impl Database {
             UPDATE schedules SET status = ? WHERE id = ?
             "#,
         )
-        .bind(status.to_string())
+        .bind(status.to_db_string())
         .bind(id)
         .execute(&self.pool)
         .await?;
@@ -185,8 +185,8 @@ impl Database {
         .bind(&history.id)
         .bind(&history.command)
         .bind(&history.executed_at)
-        .bind(history.execution_type.to_string())
-        .bind(history.status.to_string())
+        .bind(history.execution_type.to_db_string())
+        .bind(history.status.to_db_string())
         .bind(&history.output)
         .bind(&history.branch)
         .bind(&history.execution_path)
@@ -210,18 +210,18 @@ impl Database {
         let mut query = "SELECT * FROM execution_history WHERE 1=1".to_string();
 
         if let Some(status) = status_filter {
-            query.push_str(&format!(" AND status = '{}'", status.to_string()));
+            query.push_str(&format!(" AND status = '{}'", status.to_db_string()));
         }
 
         if let Some(exec_type) = type_filter {
             query.push_str(&format!(
                 " AND execution_type = '{}'",
-                exec_type.to_string()
+                exec_type.to_db_string()
             ));
         }
 
         if let Some(branch) = branch_filter {
-            query.push_str(&format!(" AND branch = '{}'", branch));
+            query.push_str(&format!(" AND branch = '{branch}'"));
         }
 
         if let Some(from) = from_date {
@@ -241,7 +241,7 @@ impl Database {
         query.push_str(" ORDER BY executed_at DESC");
 
         if let Some(limit) = limit {
-            query.push_str(&format!(" LIMIT {}", limit));
+            query.push_str(&format!(" LIMIT {limit}"));
         }
 
         let rows = sqlx::query(&query).fetch_all(&self.pool).await?;

@@ -17,17 +17,20 @@ pub async fn execute_command_immediate(
     skip_permissions: bool,
     continue_from_last: bool,
 ) -> Result<()> {
-    let execution_path = if worktree && branch.is_some() {
-        let branch_name = branch.unwrap();
-        git::get_worktree_path(branch_name)?
+    let execution_path = if worktree {
+        if let Some(branch_name) = branch {
+            git::get_worktree_path(branch_name)?
+        } else {
+            std::env::current_dir()?.to_string_lossy().to_string()
+        }
     } else {
         std::env::current_dir()?.to_string_lossy().to_string()
     };
 
     if verbose {
-        println!("Executing command: {}", command);
-        println!("Mode: {}", mode);
-        println!("Path: {}", execution_path);
+        println!("Executing command: {command}");
+        println!("Mode: {mode}");
+        println!("Path: {execution_path}");
     }
 
     let is_shell_mode = mode.to_lowercase() == "shell";
@@ -40,7 +43,7 @@ pub async fn execute_command_immediate(
     )
     .await?;
 
-    println!("\n{}", output);
+    println!("\n{output}");
 
     if !success {
         std::process::exit(1);
@@ -49,6 +52,7 @@ pub async fn execute_command_immediate(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn schedule_command(
     db: &Database,
     command: &str,
@@ -89,8 +93,12 @@ pub async fn schedule_command(
     let scheduled_time_str = scheduled_datetime.format("%Y-%m-%dT%H:%M").to_string();
 
     // Get execution branch
-    let execution_branch = if worktree && branch.is_some() {
-        branch.unwrap().to_string()
+    let execution_branch = if worktree {
+        if let Some(branch_name) = branch {
+            branch_name.to_string()
+        } else {
+            git::get_current_branch()
+        }
     } else {
         git::get_current_branch()
     };
@@ -116,10 +124,10 @@ pub async fn schedule_command(
     db.create_schedule(&schedule).await?;
 
     println!("✅ Schedule created successfully!");
-    println!("  Command: {}", command);
-    println!("  Time: {}", scheduled_time_str);
-    println!("  Mode: {}", mode);
-    println!("  Branch: {}", execution_branch);
+    println!("  Command: {command}");
+    println!("  Time: {scheduled_time_str}");
+    println!("  Mode: {mode}");
+    println!("  Branch: {execution_branch}");
 
     Ok(())
 }
@@ -178,7 +186,7 @@ pub async fn execute_command_internal(
                     }
                     Ok(None) => break,
                     Err(e) => {
-                        output.push_str(&format!("Error reading stdout: {}\n", e));
+                        output.push_str(&format!("Error reading stdout: {e}\n"));
                         break;
                     }
                 }
@@ -191,7 +199,7 @@ pub async fn execute_command_internal(
                     }
                     Ok(None) => {},
                     Err(e) => {
-                        output.push_str(&format!("Error reading stderr: {}\n", e));
+                        output.push_str(&format!("Error reading stderr: {e}\n"));
                     }
                 }
             }

@@ -109,7 +109,7 @@ impl std::fmt::Display for ExecutionStatus {
 
 // Helper methods for database
 impl ScheduleStatus {
-    pub fn to_string(&self) -> String {
+    pub fn to_db_string(&self) -> String {
         match self {
             ScheduleStatus::Pending => "pending".to_string(),
             ScheduleStatus::Completed => "completed".to_string(),
@@ -128,7 +128,7 @@ impl ScheduleStatus {
 }
 
 impl ExecutionType {
-    pub fn to_string(&self) -> String {
+    pub fn to_db_string(&self) -> String {
         match self {
             ExecutionType::Manual => "manual".to_string(),
             ExecutionType::Auto => "auto".to_string(),
@@ -149,7 +149,7 @@ impl ExecutionType {
 }
 
 impl ExecutionStatus {
-    pub fn to_string(&self) -> String {
+    pub fn to_db_string(&self) -> String {
         match self {
             ExecutionStatus::Success => "success".to_string(),
             ExecutionStatus::Failed => "failed".to_string(),

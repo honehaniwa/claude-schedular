@@ -160,7 +160,7 @@ pub fn get_worktree_path(branch: &str) -> Result<String, std::io::Error> {
         .to_string();
 
     let expanded_path = crate::utils::expand_path(&current_dir);
-    let worktree_path = format!("{}/claude-schedular-{}", expanded_path, branch);
+    let worktree_path = format!("{expanded_path}/claude-schedular-{branch}");
 
     // worktreeが存在するか確認
     if std::path::Path::new(&worktree_path).exists() {
@@ -218,7 +218,7 @@ pub fn execute_command_in_worktree(
         if claude_continue_from_last {
             claude_cmd.push_str(" -c");
         }
-        format!("{} -p \"{}\"", claude_cmd, command)
+        format!("{claude_cmd} -p \"{command}\"")
     };
 
     Command::new("sh")

@@ -234,7 +234,7 @@ pub fn app() -> Element {
                     if claude_continue_from_last() {
                         claude_cmd.push_str(" -c");
                     }
-                    format!("{} -p \"{}\"", claude_cmd, prompt)
+                    format!("{claude_cmd} -p \"{prompt}\"")
                 };
                 execute_command_in_directory(&command, &exec_path)
             };

@@ -130,20 +130,20 @@ fn main() -> Result<()> {
                     cli::ConfigAction::Show => {
                         let all_config = db.get_all_config().await?;
                         for (key, value) in all_config {
-                            println!("{} = {}", key, value);
+                            println!("{key} = {value}");
                         }
                     }
                     cli::ConfigAction::Get { key } => {
                         if let Some(value) = db.get_config(&key).await? {
-                            println!("{}", value);
+                            println!("{value}");
                         } else {
-                            eprintln!("Key '{}' not found", key);
+                            eprintln!("Key '{key}' not found");
                             std::process::exit(1);
                         }
                     }
                     cli::ConfigAction::Set { key, value } => {
                         db.set_config(&key, &value).await?;
-                        println!("✅ Configuration updated: {} = {}", key, value);
+                        println!("✅ Configuration updated: {key} = {value}");
                     }
                 },
             }
