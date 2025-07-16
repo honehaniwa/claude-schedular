@@ -37,7 +37,8 @@ jobs:
           build-essential \
           libssl-dev \
           libayatana-appindicator3-dev \
-          librsvg2-dev
+          librsvg2-dev \
+          libxdo-dev
       
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
@@ -92,7 +93,8 @@ jobs:
           build-essential \
           libssl-dev \
           libayatana-appindicator3-dev \
-          librsvg2-dev
+          librsvg2-dev \
+          libxdo-dev
       
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -166,7 +168,8 @@ jobs:
           build-essential \
           libssl-dev \
           libayatana-appindicator3-dev \
-          librsvg2-dev
+          librsvg2-dev \
+          libxdo-dev
       
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
