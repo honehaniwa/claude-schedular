@@ -168,23 +168,153 @@ tokio = { version = "1.0", features = ["full"] }
 chrono = { version = "0.4", features = ["serde"] }
 ```
 
-## 6. 今後の改善点
+## 6. CLIモード要件
 
-### 6.1 永続化ストレージ
-- 現在はメモリ内での管理
-- データベースやファイルシステムへの保存機能追加
+### 6.1 概要
+- コマンドラインインターフェースからの操作をサポート
+- デスクトップUIなしでスケジューラー機能を利用可能
+- バックグラウンドデーモンとしての実行サポート
 
-### 6.2 エラーハンドリング
-- より詳細なエラー処理
-- ユーザーフレンドリーなエラーメッセージ
+### 6.2 CLIコマンド仕様
 
-### 6.3 設定管理
-- 設定ファイルによる設定管理
-- ユーザー設定の永続化
+#### 6.2.1 基本コマンド
+```bash
+# 即座実行
+claude-scheduler exec [OPTIONS] <COMMAND>
 
-### 6.4 通知機能
-- 実行完了時の通知
-- システム通知の統合
+# スケジュール登録
+claude-scheduler schedule [OPTIONS] <COMMAND>
+
+# スケジュール一覧表示
+claude-scheduler list [OPTIONS]
+
+# 実行履歴表示
+claude-scheduler history [OPTIONS]
+
+# デーモン起動
+claude-scheduler daemon [OPTIONS]
+
+# 設定管理
+claude-scheduler config [OPTIONS]
+```
+
+#### 6.2.2 execサブコマンド
+```bash
+claude-scheduler exec [OPTIONS] <COMMAND>
+
+OPTIONS:
+  -m, --mode <MODE>        実行モード [claude|shell] (default: claude)
+  -b, --branch <BRANCH>    Git worktreeブランチ指定
+  -w, --worktree          Git worktree並列実行を有効化
+  -v, --verbose           詳細出力
+  -h, --help              ヘルプ表示
+```
+
+#### 6.2.3 scheduleサブコマンド
+```bash
+claude-scheduler schedule [OPTIONS] <COMMAND>
+
+OPTIONS:
+  -t, --time <TIME>       実行時刻 (HH:MM形式)
+  -d, --date <DATE>       実行日 [today|tomorrow|YYYY-MM-DD]
+  -m, --mode <MODE>       実行モード [claude|shell]
+  -b, --branch <BRANCH>   Git worktreeブランチ指定
+  -w, --worktree         Git worktree並列実行を有効化
+  --memo <MEMO>          メモ追加
+  -h, --help             ヘルプ表示
+```
+
+#### 6.2.4 listサブコマンド
+```bash
+claude-scheduler list [OPTIONS]
+
+OPTIONS:
+  -s, --status <STATUS>   ステータスでフィルタ [pending|completed|failed]
+  -f, --format <FORMAT>   出力形式 [table|json|csv] (default: table)
+  -n, --limit <NUMBER>    表示件数制限
+  -h, --help             ヘルプ表示
+```
+
+#### 6.2.5 historyサブコマンド
+```bash
+claude-scheduler history [OPTIONS]
+
+OPTIONS:
+  -s, --status <STATUS>   ステータスでフィルタ [success|failed]
+  -t, --type <TYPE>      実行タイプでフィルタ [manual|auto|shell]
+  -b, --branch <BRANCH>   ブランチでフィルタ
+  -f, --format <FORMAT>   出力形式 [table|json|csv]
+  -n, --limit <NUMBER>    表示件数制限
+  --from <DATE>          開始日
+  --to <DATE>            終了日
+  -h, --help             ヘルプ表示
+```
+
+#### 6.2.6 daemonサブコマンド
+```bash
+claude-scheduler daemon [OPTIONS]
+
+OPTIONS:
+  -p, --port <PORT>      APIポート番号 (default: 8080)
+  -i, --interval <SEC>   監視間隔（秒） (default: 5)
+  --pid-file <PATH>      PIDファイルパス
+  --log-file <PATH>      ログファイルパス
+  -d, --detach           バックグラウンド実行
+  -h, --help             ヘルプ表示
+```
+
+### 6.3 データ永続化
+
+#### 6.3.1 設定ファイル
+- 場所: `~/.config/claude-scheduler/config.toml`
+- 形式: TOML
+
+```toml
+[general]
+default_mode = "claude"
+check_interval = 5
+
+[git]
+enable_worktree = false
+default_branch = "main"
+
+[storage]
+database_path = "~/.local/share/claude-scheduler/db.sqlite"
+```
+
+#### 6.3.2 データベース
+- SQLite3を使用
+- スキーマ:
+  - schedules テーブル
+  - execution_history テーブル
+  - configuration テーブル
+
+### 6.4 実装要件
+
+#### 6.4.1 引数パーサー
+- `clap`クレートを使用
+- サブコマンド構造の実装
+- 引数バリデーション
+
+#### 6.4.2 出力形式
+- テーブル形式（人間が読みやすい）
+- JSON形式（プログラム連携用）
+- CSV形式（データ分析用）
+
+#### 6.4.3 エラーハンドリング
+- 終了コードの適切な設定
+- エラーメッセージの標準エラー出力
+- デバッグ情報のオプショナル出力
+
+#### 6.4.4 デーモンモード
+- systemdサービスファイルのサンプル提供
+- シグナルハンドリング（SIGTERM, SIGINT）
+- グレースフルシャットダウン
+
+### 6.5 互換性要件
+- 既存のデスクトップUIとデータ共有
+- 同一の実行エンジン使用
+- 設定の共有と同期
 
 ## 7. 使用方法
 
@@ -209,5 +339,5 @@ chrono = { version = "0.4", features = ["serde"] }
 
 ---
 
-**更新日**: 2024年現在
-**ステータス**: 実装完了・運用中
+**更新日**: 2025/07/17
+**ステータス**: 実装完了・運用中（GUI + CLI対応）

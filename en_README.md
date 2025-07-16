@@ -50,8 +50,8 @@ Claude Scheduler is a desktop application that allows you to easily schedule and
 ### Building from Source
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/claude-scheduler.git
-cd claude-scheduler
+git clone https://github.com/honehaniwa/claude-schedular.git
+cd claude-schedular
 
 # Build the project
 cargo build --release
@@ -61,7 +61,7 @@ cargo run
 ```
 
 ### Using Pre-built Binary
-Download the latest release from the [releases page](https://github.com/your-username/claude-scheduler/releases).
+Download the latest release from the [releases page](https://github.com/honehaniwa/claude-schedular/releases).
 
 ## Usage
 
@@ -101,8 +101,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### Development Setup
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/claude-scheduler.git
-cd claude-scheduler
+git clone https://github.com/honehaniwa/claude-schedular.git
+cd claude-schedular
 
 # Install dependencies
 cargo build

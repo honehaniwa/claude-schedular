@@ -1,16 +1,15 @@
 # Claude Scheduler
 
-Claude AIコマンドとGit Worktreeに対応したWebベースのスケジューラー - Dioxusで構築
+Claude AIコマンドとGit Worktreeに対応したスケジューラー - CLI & GUIの両方をサポート
 
-[![CI/CD](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/honehaniwa/claude-scheduler/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/honehaniwa/claude-schedular/actions/workflows/ci.yml/badge.svg)](https://github.com/honehaniwa/claude-schedular/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org/)
 [![Dioxus](https://img.shields.io/badge/dioxus-0.5-green.svg)](https://dioxuslabs.com/)
-[![codecov](https://codecov.io/gh/honehaniwa/claude-scheduler/branch/main/graph/badge.svg)](https://codecov.io/gh/honehaniwa/claude-scheduler)
 
 ## 概要
 
-Claude SchedulerはClaude AIコマンドやシェルコマンドをGUIで簡単にスケジュール実行できるデスクトップアプリケーションです。RustとDioxusフレームワークを使用したモダンなWeb UI技術で構築されています。
+Claude SchedulerはClaude AIコマンドやシェルコマンドをスケジュール実行できるツールです。デスクトップGUIとCLIの両方のインターフェースを提供し、RustとDioxusフレームワークで構築されています。
 
 ## 主な機能
 
@@ -52,8 +51,8 @@ Claude SchedulerはClaude AIコマンドやシェルコマンドをGUIで簡単�
 ### ソースからビルド
 ```bash
 # リポジトリをクローン
-git clone https://github.com/honehaniwa/claude-scheduler.git
-cd claude-scheduler
+git clone https://github.com/honehaniwa/claude-schedular.git
+cd claude-schedular
 
 # プロジェクトをビルド
 cargo build --release
@@ -63,11 +62,20 @@ cargo run
 ```
 
 ### ビルド済みバイナリの使用
-[リリースページ](https://github.com/honehaniwa/claude-scheduler/releases)から最新版をダウンロードしてください。
+[リリースページ](https://github.com/honehaniwa/claude-schedular/releases)から最新版をダウンロードしてください。
 
 ## 使い方
 
-### 1. Claude Codeモード（デフォルト）
+### GUI モード（デスクトップアプリケーション）
+
+引数なしで実行するとGUIモードが起動します：
+```bash
+./claude-scheduler
+# または
+cargo run
+```
+
+#### 1. Claude Codeモード（デフォルト）
 1. テキストエリアにClaude AIのプロンプトを入力
 2. 「▶️ 即座実行」をクリックするか、スケジュール実行を設定
 
@@ -87,6 +95,121 @@ cargo run
 3. 時間（0-23時）と分（0-59分）を設定
 4. 「📅 スケジュール登録」をクリック
 
+### CLI モード（コマンドライン）
+
+引数を指定して実行するとCLIモードで動作します：
+
+#### 基本的な使い方
+
+```bash
+# ヘルプを表示
+./claude-scheduler --help
+
+# 即座実行（Claudeモード）
+./claude-scheduler exec "create a Python hello world script"
+
+# シェルコマンドを即座実行
+./claude-scheduler exec -m shell "ls -la"
+
+# Git worktreeを使用して実行
+./claude-scheduler exec -w -b feature-branch "run tests"
+
+# スケジュール登録（明日の15:30に実行）
+./claude-scheduler schedule "backup database" -t 15:30 -d tomorrow
+
+# スケジュール一覧を表示
+./claude-scheduler list
+
+# JSON形式で出力
+./claude-scheduler list -f json
+
+# 実行履歴を表示（最新10件）
+./claude-scheduler history -n 10
+
+# デーモンとして起動（バックグラウンドでスケジュール監視）
+./claude-scheduler daemon
+```
+
+#### CLI サブコマンド
+
+##### `exec` - 即座実行
+```bash
+claude-scheduler exec [OPTIONS] <COMMAND>
+
+OPTIONS:
+  -m, --mode <MODE>        実行モード [claude|shell] (default: claude)
+  -b, --branch <BRANCH>    Git worktreeブランチ指定
+  -w, --worktree          Git worktree並列実行を有効化
+  -v, --verbose           詳細出力
+```
+
+##### `schedule` - スケジュール登録
+```bash
+claude-scheduler schedule [OPTIONS] <COMMAND>
+
+OPTIONS:
+  -t, --time <TIME>       実行時刻 (HH:MM形式)
+  -d, --date <DATE>       実行日 [today|tomorrow|YYYY-MM-DD]
+  -m, --mode <MODE>       実行モード [claude|shell]
+  -b, --branch <BRANCH>   Git worktreeブランチ指定
+  -w, --worktree         Git worktree並列実行を有効化
+  --memo <MEMO>          メモ追加
+```
+
+##### `list` - スケジュール一覧
+```bash
+claude-scheduler list [OPTIONS]
+
+OPTIONS:
+  -s, --status <STATUS>   ステータスでフィルタ [pending|completed|failed]
+  -f, --format <FORMAT>   出力形式 [table|json|csv] (default: table)
+  -n, --limit <NUMBER>    表示件数制限
+```
+
+##### `history` - 実行履歴
+```bash
+claude-scheduler history [OPTIONS]
+
+OPTIONS:
+  -s, --status <STATUS>   ステータスでフィルタ [success|failed]
+  -t, --type <TYPE>      実行タイプでフィルタ [manual|auto|shell]
+  -b, --branch <BRANCH>   ブランチでフィルタ
+  -f, --format <FORMAT>   出力形式 [table|json|csv]
+  -n, --limit <NUMBER>    表示件数制限
+  --from <DATE>          開始日
+  --to <DATE>            終了日
+```
+
+##### `daemon` - デーモン起動
+```bash
+claude-scheduler daemon [OPTIONS]
+
+OPTIONS:
+  -p, --port <PORT>      APIポート番号 (default: 8080)
+  -i, --interval <SEC>   監視間隔（秒） (default: 5)
+  --pid-file <PATH>      PIDファイルパス
+  --log-file <PATH>      ログファイルパス
+  -d, --detach           バックグラウンド実行
+```
+
+##### `config` - 設定管理
+```bash
+# 全設定を表示
+claude-scheduler config show
+
+# 特定の設定値を取得
+claude-scheduler config get default_mode
+
+# 設定値を変更
+claude-scheduler config set default_mode shell
+```
+
+#### データ保存場所
+
+CLIモードでは以下の場所にデータが保存されます：
+- **設定ファイル**: `~/.config/claude-scheduler/config.toml`
+- **データベース**: `~/.local/share/claude-scheduler/db.sqlite`
+
 ### 5. 実行履歴の確認
 - 「📊 実行履歴・結果」セクションで全ての実行履歴を確認
 - 緑色のボーダーは成功、赤色は失敗を示します
@@ -94,7 +217,24 @@ cargo run
 
 ## 設定
 
-アプリケーションは実行時に設定と履歴をメモリに保存します。永続化ストレージについては、データベースやファイルシステムを使用するようにコードを修正してください。
+### GUI モード
+アプリケーションは実行時に設定と履歴をメモリに保存します。
+
+### CLI モード
+設定は`~/.config/claude-scheduler/config.toml`に保存されます：
+
+```toml
+[general]
+default_mode = "claude"
+check_interval = 5
+
+[git]
+enable_worktree = false
+default_branch = "main"
+
+[storage]
+database_path = "~/.local/share/claude-scheduler/db.sqlite"
+```
 
 ## 貢献
 
@@ -103,8 +243,8 @@ cargo run
 ### 開発環境のセットアップ
 ```bash
 # リポジトリをクローン
-git clone https://github.com/honehaniwa/claude-scheduler.git
-cd claude-scheduler
+git clone https://github.com/honehaniwa/claude-schedular.git
+cd claude-schedular
 
 # 依存関係をインストール
 cargo build
@@ -175,3 +315,42 @@ cargo clippy --all-targets --all-features -- -D warnings
 [English README](en_README.md) | [English Requirements](requirements/en_requirements.md) 
 ## CI/CDテスト完了
 最終更新: #午後
+
+## Codecov設定手順
+
+このプロジェクトはコードカバレッジ測定にCodecovを使用していますが、現在トークンが設定されていないため無効化されています。有効化するには：
+
+1. **Codecovアカウントの作成**
+   - [codecov.io](https://codecov.io/)にアクセス
+   - GitHubアカウントでサインイン
+
+2. **リポジトリの追加**
+   - Codecovダッシュボードで「Add a repository」をクリック
+   - `honehaniwa/claude-schedular`を選択
+
+3. **トークンの取得**
+   - リポジトリ設定ページでアップロードトークンをコピー
+
+4. **GitHub Secretsに追加**
+   - GitHubリポジトリの Settings > Secrets and variables > Actions
+   - 「New repository secret」をクリック
+   - Name: `CODECOV_TOKEN`
+   - Value: コピーしたトークンを貼り付け
+
+5. **CI設定の更新**
+   - `.github/workflows/ci.yml`の該当部分（110-115行目）のコメントを解除：
+   ```yaml
+   - name: Upload coverage to Codecov
+     uses: codecov/codecov-action@v4
+     with:
+       files: lcov.info
+       fail_ci_if_error: true
+       token: ${{ secrets.CODECOV_TOKEN }}  # この行を追加
+   ```
+
+6. **バッジの追加（オプション）**
+   - Codecovダッシュボードからバッジ用のMarkdownをコピー
+   - README.mdのバッジセクションに追加：
+   ```markdown
+   [![codecov](https://codecov.io/gh/honehaniwa/claude-schedular/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/honehaniwa/claude-schedular)
+   ```

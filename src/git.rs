@@ -142,6 +142,34 @@ pub fn get_current_branch() -> String {
     get_current_branch_in_directory(&current_dir)
 }
 
+/// 現在のbranchを取得（Result版）
+pub fn get_current_branch_result() -> Result<String, std::io::Error> {
+    let current_dir = std::env::current_dir()
+        .unwrap_or_else(|_| std::path::PathBuf::from("."))
+        .to_string_lossy()
+        .to_string();
+    Ok(get_current_branch_in_directory(&current_dir))
+}
+
+/// 指定されたbranchのworktreeパスを取得
+pub fn get_worktree_path(branch: &str) -> Result<String, std::io::Error> {
+    let current_dir = std::env::current_dir()
+        .unwrap_or_else(|_| std::path::PathBuf::from("."))
+        .to_string_lossy()
+        .to_string();
+    
+    let expanded_path = crate::utils::expand_path(&current_dir);
+    let worktree_path = format!("{}/claude-schedular-{}", expanded_path, branch);
+    
+    // worktreeが存在するか確認
+    if std::path::Path::new(&worktree_path).exists() {
+        Ok(worktree_path)
+    } else {
+        // worktreeが存在しない場合は現在のディレクトリを返す
+        Ok(current_dir)
+    }
+}
+
 /// git worktreeでのコマンド実行
 pub fn execute_command_in_worktree(
     command: &str,

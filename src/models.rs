@@ -1,6 +1,7 @@
 use chrono::Local;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Schedule {
     pub id: String,
     pub command: String,
@@ -13,14 +14,14 @@ pub struct Schedule {
     pub execution_path: String, // 実行ディレクトリパス
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ScheduleStatus {
     Pending,
     Completed,
     Failed,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutionHistory {
     pub id: String,
     pub command: String,
@@ -32,7 +33,7 @@ pub struct ExecutionHistory {
     pub execution_path: String, // 実行ディレクトリパス
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ExecutionType {
     Manual,
     #[allow(dead_code)]
@@ -41,7 +42,7 @@ pub enum ExecutionType {
     ShellMode,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ExecutionStatus {
     Success,
     Failed,
@@ -92,6 +93,64 @@ impl std::fmt::Display for ExecutionStatus {
         match self {
             ExecutionStatus::Success => write!(f, "成功"),
             ExecutionStatus::Failed => write!(f, "失敗"),
+        }
+    }
+}
+
+// Helper methods for database
+impl ScheduleStatus {
+    pub fn to_string(&self) -> String {
+        match self {
+            ScheduleStatus::Pending => "pending".to_string(),
+            ScheduleStatus::Completed => "completed".to_string(),
+            ScheduleStatus::Failed => "failed".to_string(),
+        }
+    }
+
+    pub fn from_string(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "pending" => ScheduleStatus::Pending,
+            "completed" => ScheduleStatus::Completed,
+            "failed" => ScheduleStatus::Failed,
+            _ => ScheduleStatus::Pending,
+        }
+    }
+}
+
+impl ExecutionType {
+    pub fn to_string(&self) -> String {
+        match self {
+            ExecutionType::Manual => "manual".to_string(),
+            ExecutionType::Auto => "auto".to_string(),
+            ExecutionType::FromSchedule => "from_schedule".to_string(),
+            ExecutionType::ShellMode => "shell_mode".to_string(),
+        }
+    }
+
+    pub fn from_string(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "manual" => ExecutionType::Manual,
+            "auto" => ExecutionType::Auto,
+            "from_schedule" => ExecutionType::FromSchedule,
+            "shell_mode" => ExecutionType::ShellMode,
+            _ => ExecutionType::Manual,
+        }
+    }
+}
+
+impl ExecutionStatus {
+    pub fn to_string(&self) -> String {
+        match self {
+            ExecutionStatus::Success => "success".to_string(),
+            ExecutionStatus::Failed => "failed".to_string(),
+        }
+    }
+
+    pub fn from_string(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "success" => ExecutionStatus::Success,
+            "failed" => ExecutionStatus::Failed,
+            _ => ExecutionStatus::Failed,
         }
     }
 }
