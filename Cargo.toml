@@ -1,0 +1,31 @@
+[package]
+name = "claude-scheduler"
+version = "0.1.0"
+edition = "2021"
+authors = ["Claude Scheduler Contributors"]
+description = "A web-based scheduler for Claude AI commands with Git worktree support"
+repository = "https://github.com/your-username/claude-scheduler"
+license = "MIT"
+readme = "README.md"
+keywords = ["claude", "scheduler", "ai", "git-worktree", "automation"]
+categories = ["command-line-utilities", "web-programming"]
+
+[[bin]]
+name = "claude-scheduler"
+path = "src/main.rs"
+
+[lib]
+name = "claude_scheduler"
+path = "src/lib.rs"
+
+[dependencies]
+dioxus = { version = "0.5", features = ["desktop"] }
+tokio = { version = "1.0", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+rfd = "0.14"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
