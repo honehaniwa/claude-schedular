@@ -1,5 +1,5 @@
-use clap::{Parser, Subcommand};
 use chrono::NaiveDate;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "claude-scheduler")]
@@ -159,19 +159,19 @@ pub enum Commands {
 pub enum ConfigAction {
     /// Show current configuration
     Show,
-    
+
     /// Set a configuration value
     Set {
         /// Configuration key
         key: String,
-        
+
         /// Configuration value
         value: String,
     },
-    
+
     /// Get a configuration value
     Get {
         /// Configuration key
         key: String,
     },
-} 
+}

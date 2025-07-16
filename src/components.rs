@@ -168,7 +168,7 @@ pub fn app() -> Element {
 
     // シェルモード実行用の状態
     let mut use_shell_mode = use_signal(|| false);
-    
+
     // Claude実行オプション用の状態
     let mut claude_skip_permissions = use_signal(|| false);
     let mut claude_continue_from_last = use_signal(|| false);
@@ -214,7 +214,14 @@ pub fn app() -> Element {
         spawn(async move {
             let result = if use_worktree && branch != "main" && branch != get_current_branch() {
                 // Git Worktreeを使用
-                                        execute_command_in_worktree(&prompt, &branch, shell_mode, &exec_path, claude_skip_permissions(), claude_continue_from_last())
+                execute_command_in_worktree(
+                    &prompt,
+                    &branch,
+                    shell_mode,
+                    &exec_path,
+                    claude_skip_permissions(),
+                    claude_continue_from_last(),
+                )
             } else {
                 // 通常の実行
                 let command = if shell_mode {
@@ -723,7 +730,7 @@ pub fn app() -> Element {
                         // モードオプション
                         div {
                             style: "display: flex; gap: 15px; align-items: center;",
-                            
+
                             // Shell Mode切り替え
                             label {
                                 style: "display: flex; align-items: center; cursor: pointer; color: {text_color}; font-size: 0.85rem;",
@@ -738,7 +745,7 @@ pub fn app() -> Element {
                                     "Shell Mode"
                                 }
                             }
-                            
+
                             // Claude実行オプション（Shell Modeではない場合のみ表示）
                             if !use_shell_mode() {
                                 // Skip Permissions
@@ -756,7 +763,7 @@ pub fn app() -> Element {
                                         "Skip Permissions"
                                     }
                                 }
-                                
+
                                 // Continue from Last
                                 label {
                                     style: "display: flex; align-items: center; cursor: pointer; color: {text_color}; font-size: 0.85rem;",

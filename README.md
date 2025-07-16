@@ -61,6 +61,16 @@ cargo build --release
 cargo run
 ```
 
+### 開発者向け
+
+#### Pre-commitフック
+このプロジェクトにはpre-commitフックが設定されており、`git add`する前に自動的に`cargo fmt --all -- --check`が実行されます。
+
+フォーマットエラーがある場合は、以下のコマンドで修正してください：
+```bash
+cargo fmt --all
+```
+
 ### ビルド済みバイナリの使用
 [リリースページ](https://github.com/honehaniwa/claude-schedular/releases)から最新版をダウンロードしてください。
 
@@ -367,3 +377,16 @@ cargo clippy --all-targets --all-features -- -D warnings
    ```markdown
    [![codecov](https://codecov.io/gh/honehaniwa/claude-schedular/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/honehaniwa/claude-schedular)
    ```
+
+---
+
+## ⚠️ セキュリティ監査（cargo audit）について
+
+本プロジェクトは依存クレートの都合により、現時点でcargo auditによるセキュリティチェックがfailします。
+
+- sqlx経由でrsaクレートの脆弱性（Marvin Attack: RUSTSEC-2023-0071）が含まれます（2024年7月現在、修正版なし）
+- GUIモードではGTK3系の依存が「メンテされていない」警告を出します
+- CLIモードのみでビルド（`cargo build --release --no-default-features`）すれば、これらの影響は実質ありません
+- CI/CDではcargo auditジョブはallow failure（失敗しても全体はfailにならない）設定です
+
+依存クレートのアップデートにより将来的に解消される見込みです。

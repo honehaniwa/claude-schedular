@@ -49,7 +49,7 @@ impl Default for Config {
 impl Config {
     pub async fn load() -> Result<Self> {
         let config_path = config_file_path();
-        
+
         if config_path.exists() {
             let content = fs::read_to_string(&config_path).await?;
             let config: Config = toml::from_str(&content)?;
@@ -63,12 +63,12 @@ impl Config {
 
     pub async fn save(&self) -> Result<()> {
         let config_path = config_file_path();
-        
+
         // Create parent directory if it doesn't exist
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent).await?;
         }
-        
+
         let content = toml::to_string_pretty(self)?;
         fs::write(&config_path, content).await?;
         Ok(())
@@ -100,4 +100,4 @@ pub fn default_database_path() -> PathBuf {
     } else {
         PathBuf::from(".claude-scheduler/db.sqlite")
     }
-} 
+}

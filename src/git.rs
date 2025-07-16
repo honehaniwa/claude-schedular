@@ -158,10 +158,10 @@ pub fn get_worktree_path(branch: &str) -> Result<String, std::io::Error> {
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
         .to_string_lossy()
         .to_string();
-    
+
     let expanded_path = crate::utils::expand_path(&current_dir);
     let worktree_path = format!("{}/claude-schedular-{}", expanded_path, branch);
-    
+
     // worktreeが存在するか確認
     if std::path::Path::new(&worktree_path).exists() {
         Ok(worktree_path)

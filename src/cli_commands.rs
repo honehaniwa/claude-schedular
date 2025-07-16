@@ -1,12 +1,12 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use std::process::Stdio;
-use tokio::process::Command;
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::Command;
 
-use crate::models::{Schedule, ScheduleStatus};
 use crate::database::Database;
 use crate::git;
+use crate::models::{Schedule, ScheduleStatus};
 
 pub async fn execute_command_immediate(
     command: &str,
@@ -31,10 +31,17 @@ pub async fn execute_command_immediate(
     }
 
     let is_shell_mode = mode.to_lowercase() == "shell";
-    let (success, output) = execute_command_internal(command, is_shell_mode, &execution_path, skip_permissions, continue_from_last).await?;
+    let (success, output) = execute_command_internal(
+        command,
+        is_shell_mode,
+        &execution_path,
+        skip_permissions,
+        continue_from_last,
+    )
+    .await?;
 
     println!("\n{}", output);
-    
+
     if !success {
         std::process::exit(1);
     }
@@ -59,7 +66,7 @@ pub async fn schedule_command(
         "today" => Local::now().date_naive(),
         "tomorrow" => Local::now().date_naive() + chrono::Duration::days(1),
         _ => NaiveDate::parse_from_str(date, "%Y-%m-%d")
-            .context("Invalid date format. Use 'today', 'tomorrow', or 'YYYY-MM-DD'")?
+            .context("Invalid date format. Use 'today', 'tomorrow', or 'YYYY-MM-DD'")?,
     };
 
     // Parse time
@@ -75,8 +82,8 @@ pub async fn schedule_command(
         anyhow::bail!("Invalid time. Hour must be 0-23, minute must be 0-59");
     }
 
-    let target_time = NaiveTime::from_hms_opt(hour, minute, 0)
-        .ok_or_else(|| anyhow::anyhow!("Invalid time"))?;
+    let target_time =
+        NaiveTime::from_hms_opt(hour, minute, 0).ok_or_else(|| anyhow::anyhow!("Invalid time"))?;
 
     let scheduled_datetime = NaiveDateTime::new(target_date, target_time);
     let scheduled_time_str = scheduled_datetime.format("%Y-%m-%dT%H:%M").to_string();
@@ -90,7 +97,10 @@ pub async fn schedule_command(
 
     // Create schedule
     let schedule = Schedule {
-        id: format!("schedule_{}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)),
+        id: format!(
+            "schedule_{}",
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)
+        ),
         command: command.to_string(),
         scheduled_time: Some(scheduled_time_str.clone()),
         _memo: memo.unwrap_or("").to_string(),
@@ -148,15 +158,15 @@ pub async fn execute_command_internal(
         .stderr(Stdio::piped());
 
     let mut child = cmd.spawn()?;
-    
+
     let stdout = child.stdout.take().unwrap();
     let stderr = child.stderr.take().unwrap();
-    
+
     let mut stdout_reader = BufReader::new(stdout).lines();
     let mut stderr_reader = BufReader::new(stderr).lines();
-    
+
     let mut output = String::new();
-    
+
     // Read stdout and stderr
     loop {
         tokio::select! {
@@ -187,7 +197,7 @@ pub async fn execute_command_internal(
             }
         }
     }
-    
+
     let status = child.wait().await?;
     Ok((status.success(), output))
-} 
+}
