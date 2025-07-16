@@ -173,3 +173,5 @@ cargo clippy --all-targets --all-features -- -D warnings
 ---
 
 [English README](en_README.md) | [English Requirements](requirements/en_requirements.md) 
+## CI/CDテスト完了
+最終更新: #午後
