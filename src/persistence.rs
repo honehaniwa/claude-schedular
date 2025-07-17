@@ -66,6 +66,7 @@ pub fn load_schedules() -> Result<Vec<Schedule>> {
 }
 
 /// データディレクトリのクリーンアップ（古いデータの削除）
+#[allow(dead_code)]
 pub fn cleanup_old_data(days: u64) -> Result<()> {
     use chrono::{Duration, Local};
 

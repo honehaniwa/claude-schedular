@@ -917,7 +917,7 @@ pub fn app() -> Element {
 
                                         // 0時から23時まで1時間単位
                                         for hour in 0..24 {
-                                            option { value: hour.to_string(), {format!("{:02}時", hour)} }
+                                            option { value: hour.to_string(), {format!("{hour:02}時")} }
                                         }
                                     }
 
@@ -937,7 +937,7 @@ pub fn app() -> Element {
 
                                         // 0分から55分まで5分単位
                                         for minute in (0..60).step_by(5) {
-                                            option { value: minute.to_string(), {format!("{:02}分", minute)} }
+                                            option { value: minute.to_string(), {format!("{minute:02}分")} }
                                         }
                                     }
                                 }
@@ -979,8 +979,10 @@ pub fn app() -> Element {
                                                                 {
                                         if editing_schedule().is_some() {
                                             if use_schedule() { "📝 スケジュール更新" } else { "📝 更新" }
+                                        } else if use_schedule() {
+                                            "📅 スケジュール登録"
                                         } else {
-                                            if use_schedule() { "📅 スケジュール登録" } else { "📋 リスト追加" }
+                                            "📋 リスト追加"
                                         }
                                     }
                         }
