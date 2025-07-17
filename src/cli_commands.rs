@@ -14,25 +14,36 @@ pub async fn execute_command_immediate(
     branch: Option<&str>,
     worktree: bool,
     verbose: bool,
+    skip_permissions: bool,
+    continue_from_last: bool,
 ) -> Result<()> {
-    let execution_path = if worktree && branch.is_some() {
-        let branch_name = branch.unwrap();
-        git::get_worktree_path(branch_name)?
+    let execution_path = if worktree {
+        if let Some(branch_name) = branch {
+            git::get_worktree_path(branch_name)?
+        } else {
+            std::env::current_dir()?.to_string_lossy().to_string()
+        }
     } else {
         std::env::current_dir()?.to_string_lossy().to_string()
     };
 
     if verbose {
-        println!("Executing command: {}", command);
-        println!("Mode: {}", mode);
-        println!("Path: {}", execution_path);
+        println!("Executing command: {command}");
+        println!("Mode: {mode}");
+        println!("Path: {execution_path}");
     }
 
     let is_shell_mode = mode.to_lowercase() == "shell";
-    let (success, output) =
-        execute_command_internal(command, is_shell_mode, &execution_path).await?;
+    let (success, output) = execute_command_internal(
+        command,
+        is_shell_mode,
+        &execution_path,
+        skip_permissions,
+        continue_from_last,
+    )
+    .await?;
 
-    println!("\n{}", output);
+    println!("\n{output}");
 
     if !success {
         std::process::exit(1);
@@ -41,6 +52,7 @@ pub async fn execute_command_immediate(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn schedule_command(
     db: &Database,
     command: &str,
@@ -50,6 +62,8 @@ pub async fn schedule_command(
     branch: Option<&str>,
     worktree: bool,
     memo: Option<&str>,
+    skip_permissions: bool,
+    continue_from_last: bool,
 ) -> Result<()> {
     // Parse date
     let target_date = match date.to_lowercase().as_str() {
@@ -79,8 +93,12 @@ pub async fn schedule_command(
     let scheduled_time_str = scheduled_datetime.format("%Y-%m-%dT%H:%M").to_string();
 
     // Get execution branch
-    let execution_branch = if worktree && branch.is_some() {
-        branch.unwrap().to_string()
+    let execution_branch = if worktree {
+        if let Some(branch_name) = branch {
+            branch_name.to_string()
+        } else {
+            git::get_current_branch()
+        }
     } else {
         git::get_current_branch()
     };
@@ -99,15 +117,17 @@ pub async fn schedule_command(
         is_shell_mode: mode.to_lowercase() == "shell",
         branch: execution_branch.clone(),
         execution_path: std::env::current_dir()?.to_string_lossy().to_string(),
+        claude_skip_permissions: skip_permissions,
+        claude_continue_from_last: continue_from_last,
     };
 
     db.create_schedule(&schedule).await?;
 
     println!("✅ Schedule created successfully!");
-    println!("  Command: {}", command);
-    println!("  Time: {}", scheduled_time_str);
-    println!("  Mode: {}", mode);
-    println!("  Branch: {}", execution_branch);
+    println!("  Command: {command}");
+    println!("  Time: {scheduled_time_str}");
+    println!("  Mode: {mode}");
+    println!("  Branch: {execution_branch}");
 
     Ok(())
 }
@@ -116,6 +136,8 @@ pub async fn execute_command_internal(
     command: &str,
     is_shell_mode: bool,
     execution_path: &str,
+    skip_permissions: bool,
+    continue_from_last: bool,
 ) -> Result<(bool, String)> {
     let mut cmd = if is_shell_mode {
         if cfg!(target_os = "windows") {
@@ -129,6 +151,12 @@ pub async fn execute_command_internal(
         }
     } else {
         let mut cmd = Command::new("claude");
+        if skip_permissions {
+            cmd.arg("--dangerously-skip-permissions");
+        }
+        if continue_from_last {
+            cmd.arg("-c");
+        }
         cmd.arg("code").arg(command);
         cmd
     };
@@ -158,7 +186,7 @@ pub async fn execute_command_internal(
                     }
                     Ok(None) => break,
                     Err(e) => {
-                        output.push_str(&format!("Error reading stdout: {}\n", e));
+                        output.push_str(&format!("Error reading stdout: {e}\n"));
                         break;
                     }
                 }
@@ -171,7 +199,7 @@ pub async fn execute_command_internal(
                     }
                     Ok(None) => {},
                     Err(e) => {
-                        output.push_str(&format!("Error reading stderr: {}\n", e));
+                        output.push_str(&format!("Error reading stderr: {e}\n"));
                     }
                 }
             }

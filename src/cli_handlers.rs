@@ -12,17 +12,17 @@ pub async fn list_schedules(
     format: &str,
     limit: Option<usize>,
 ) -> Result<()> {
-    let status = status_filter.map(|s| ScheduleStatus::from_string(s));
+    let status = status_filter.map(ScheduleStatus::from_string);
     let schedules = db.get_schedules(status, limit).await?;
 
     match format {
         "json" => {
             let json = serde_json::to_string_pretty(&schedules)?;
-            println!("{}", json);
+            println!("{json}");
         }
         "csv" => {
             let mut wtr = csv::Writer::from_writer(std::io::stdout());
-            wtr.write_record(&[
+            wtr.write_record([
                 "ID",
                 "Command",
                 "Scheduled Time",
@@ -33,11 +33,11 @@ pub async fn list_schedules(
             ])?;
 
             for schedule in schedules {
-                wtr.write_record(&[
+                wtr.write_record([
                     &schedule.id,
                     &schedule.command,
                     &schedule.scheduled_time.unwrap_or_default(),
-                    &schedule.status.to_string(),
+                    &schedule.status.to_db_string(),
                     &if schedule.is_shell_mode {
                         "shell".to_string()
                     } else {
@@ -80,7 +80,7 @@ pub async fn list_schedules(
                     id_short,
                     command_short,
                     schedule.scheduled_time.unwrap_or_default(),
-                    schedule.status.to_string(),
+                    schedule.status.to_db_string(),
                     if schedule.is_shell_mode {
                         "shell".to_string()
                     } else {
@@ -90,13 +90,14 @@ pub async fn list_schedules(
                 ]);
             }
 
-            println!("{}", table);
+            println!("{table}");
         }
     }
 
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn show_history(
     db: &Database,
     status_filter: Option<&str>,
@@ -107,8 +108,8 @@ pub async fn show_history(
     from_date: Option<NaiveDate>,
     to_date: Option<NaiveDate>,
 ) -> Result<()> {
-    let status = status_filter.map(|s| ExecutionStatus::from_string(s));
-    let exec_type = type_filter.map(|t| ExecutionType::from_string(t));
+    let status = status_filter.map(ExecutionStatus::from_string);
+    let exec_type = type_filter.map(ExecutionType::from_string);
 
     let from = from_date.map(|d| {
         d.and_hms_opt(0, 0, 0)
@@ -137,11 +138,11 @@ pub async fn show_history(
     match format {
         "json" => {
             let json = serde_json::to_string_pretty(&history)?;
-            println!("{}", json);
+            println!("{json}");
         }
         "csv" => {
             let mut wtr = csv::Writer::from_writer(std::io::stdout());
-            wtr.write_record(&[
+            wtr.write_record([
                 "ID",
                 "Command",
                 "Executed At",
@@ -152,12 +153,12 @@ pub async fn show_history(
             ])?;
 
             for entry in history {
-                wtr.write_record(&[
+                wtr.write_record([
                     &entry.id,
                     &entry.command,
                     &entry.executed_at,
-                    &entry.execution_type.to_string(),
-                    &entry.status.to_string(),
+                    &entry.execution_type.to_db_string(),
+                    &entry.status.to_db_string(),
                     &entry.branch,
                     &entry.output,
                 ])?;
@@ -186,13 +187,13 @@ pub async fn show_history(
                 table.add_row(vec![
                     entry.executed_at,
                     command_short,
-                    entry.execution_type.to_string(),
+                    entry.execution_type.to_db_string(),
                     format!("{} {}", status_emoji, entry.status),
                     entry.branch,
                 ]);
             }
 
-            println!("{}", table);
+            println!("{table}");
         }
     }
 
@@ -215,7 +216,7 @@ pub async fn run_daemon(
     if let Some(pid_path) = pid_file {
         let pid = std::process::id();
         let mut file = File::create(pid_path)?;
-        writeln!(file, "{}", pid)?;
+        writeln!(file, "{pid}")?;
     }
 
     // Setup logging
@@ -225,8 +226,8 @@ pub async fn run_daemon(
     }
 
     println!("🚀 Starting Claude Scheduler daemon...");
-    println!("  Port: {}", port);
-    println!("  Check interval: {}s", interval);
+    println!("  Port: {port}");
+    println!("  Check interval: {interval}s");
 
     // Schedule checker loop
     let mut interval_timer = tokio_interval(Duration::from_secs(interval));
@@ -263,6 +264,8 @@ pub async fn run_daemon(
                             &schedule.command,
                             schedule.is_shell_mode,
                             &execution_path,
+                            schedule.claude_skip_permissions,
+                            schedule.claude_continue_from_last,
                         )
                         .await?;
 
@@ -292,6 +295,8 @@ pub async fn run_daemon(
                             output,
                             branch: schedule.branch.clone(),
                             execution_path,
+                            claude_skip_permissions: schedule.claude_skip_permissions,
+                            claude_continue_from_last: schedule.claude_continue_from_last,
                         };
 
                         db.create_execution_history(&history).await?;

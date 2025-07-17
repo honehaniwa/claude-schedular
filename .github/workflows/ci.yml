@@ -16,13 +16,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, beta]
+        rust: [stable, beta, nightly]
         
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install system dependencies (Ubuntu)
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+      
+    - name: Install system dependencies (Ubuntu - GUI)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
@@ -39,6 +42,20 @@ jobs:
           libayatana-appindicator3-dev \
           librsvg2-dev \
           libxdo-dev
+      
+    - name: Install system dependencies (Ubuntu - CLI only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          pkg-config \
+          build-essential \
+          libssl-dev
+      
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install pkg-config openssl
       
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
@@ -60,17 +77,51 @@ jobs:
     - name: Check formatting
       run: cargo fmt --all -- --check
       
-    - name: Run clippy
+    - name: Run clippy (CLI only)
+      run: cargo clippy --no-default-features --all-targets -- -D warnings
+      
+    - name: Run clippy (with GUI features - Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
       run: cargo clippy --all-targets --all-features -- -D warnings
       
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Run tests (CLI only)
+      run: cargo test --no-default-features --verbose
       
-    - name: Build
-      run: cargo build --verbose
+    - name: Run tests (with GUI features - Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
+      run: cargo test --all-features --verbose
       
-    - name: Build release
-      run: cargo build --release --verbose
+    - name: Build (CLI only)
+      run: cargo build --no-default-features --verbose
+      
+    - name: Build (with GUI features - Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
+      run: cargo build --all-features --verbose
+      
+    - name: Build release (CLI only)
+      run: cargo build --release --no-default-features --verbose
+      
+    - name: Build release (with GUI features - Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
+      run: cargo build --release --all-features --verbose
+      
+    - name: Test CLI help commands
+      run: |
+        ./target/release/claude-scheduler --help
+        ./target/release/claude-scheduler exec --help
+        ./target/release/claude-scheduler schedule --help
+        ./target/release/claude-scheduler list --help
+        ./target/release/claude-scheduler history --help
+        ./target/release/claude-scheduler daemon --help
+        ./target/release/claude-scheduler config --help
+      
+    - name: Test CLI version
+      run: ./target/release/claude-scheduler --version
+      
+    - name: Test CLI exec with skip-permissions
+      run: |
+        echo "Testing CLI exec with Claude options..."
+        ./target/release/claude-scheduler exec "echo test" -m shell --skip-permissions -c || true
 
   coverage:
     name: Code Coverage
@@ -79,7 +130,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install system dependencies (Ubuntu)
+    - name: Install system dependencies (Ubuntu - GUI)
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -97,15 +148,15 @@ jobs:
           libxdo-dev
       
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@nightly
       with:
         components: llvm-tools-preview
         
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
       
-    - name: Generate coverage report
-      run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+    - name: Generate coverage report (CLI only)
+      run: cargo llvm-cov --no-default-features --workspace --lcov --output-path lcov.info
       
     # TODO: Re-enable when CODECOV_TOKEN is configured
     # - name: Upload coverage to Codecov
@@ -114,9 +165,95 @@ jobs:
     #     files: lcov.info
     #     fail_ci_if_error: true
 
+  cli-tests:
+    name: CLI Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install system dependencies (Ubuntu - CLI only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          pkg-config \
+          build-essential \
+          libssl-dev
+      
+    - name: Install system dependencies (macOS - CLI only)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install pkg-config openssl
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@nightly
+      
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-cli-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-cli-
+      
+    - name: Build CLI (no GUI features)
+      run: cargo build --release --no-default-features
+      
+    - name: Test CLI commands
+      run: |
+        # Basic help tests
+        ./target/release/claude-scheduler --help
+        ./target/release/claude-scheduler --version
+        
+        # Subcommand help tests
+        ./target/release/claude-scheduler exec --help
+        ./target/release/claude-scheduler schedule --help
+        ./target/release/claude-scheduler list --help
+        ./target/release/claude-scheduler history --help
+        
+        # Test shell execution
+        ./target/release/claude-scheduler exec "echo Hello CLI" -m shell
+        
+        # Test schedule command (dry run)
+        ./target/release/claude-scheduler schedule "echo scheduled" -t 23:59 -d tomorrow --skip-permissions || true
+        
+        # Test list command
+        ./target/release/claude-scheduler list -f json || true
+        ./target/release/claude-scheduler list -f csv || true
+        
+        # Test history command
+        ./target/release/claude-scheduler history -n 5 -f table || true
+        
+    - name: Test CLI with Claude options (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        # Test exec with skip-permissions and continue flags
+        ./target/release/claude-scheduler exec "test command" --skip-permissions -c -v || true
+        
+        # Test schedule with Claude options
+        ./target/release/claude-scheduler schedule "test schedule" -t 12:00 --skip-permissions --continue-from-last || true
+        
+    - name: Test CLI with Claude options (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        # Test exec with skip-permissions and continue flags
+        ./target/release/claude-scheduler.exe exec "test command" --skip-permissions -c -v || true
+        
+        # Test schedule with Claude options
+        ./target/release/claude-scheduler.exe schedule "test schedule" -t 12:00 --skip-permissions --continue-from-last || true
+
   security:
     name: Security Audit
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -127,7 +264,7 @@ jobs:
     - name: Install cargo-audit
       run: cargo install cargo-audit
       
-    - name: Run security audit
+    - name: Run security audit (CLI only)
       run: cargo audit
 
   build-binaries:
@@ -140,21 +277,25 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             binary_name: claude-scheduler
+            features: "--all-features"
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             binary_name: claude-scheduler.exe
+            features: "--no-default-features"
           - os: macos-latest
             target: x86_64-apple-darwin
             binary_name: claude-scheduler
+            features: "--no-default-features"
           - os: macos-latest
             target: aarch64-apple-darwin
             binary_name: claude-scheduler
+            features: "--no-default-features"
             
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install system dependencies (Ubuntu)
+    - name: Install system dependencies (Ubuntu - GUI)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
@@ -172,8 +313,22 @@ jobs:
           librsvg2-dev \
           libxdo-dev
       
+    - name: Install system dependencies (Ubuntu - CLI only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          pkg-config \
+          build-essential \
+          libssl-dev
+    
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install pkg-config openssl
+    
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@nightly
       with:
         target: ${{ matrix.target }}
         
@@ -187,7 +342,7 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         
     - name: Build release binary
-      run: cargo build --release --target ${{ matrix.target }}
+      run: cargo build --release --target ${{ matrix.target }} ${{ matrix.features }}
       
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4

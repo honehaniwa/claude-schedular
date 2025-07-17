@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod cli_commands;
 pub mod cli_handlers;
+#[cfg(feature = "gui")]
 pub mod components;
 pub mod config;
 pub mod database;

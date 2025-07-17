@@ -12,6 +12,10 @@ pub struct Schedule {
     pub is_shell_mode: bool,    // シェルモード実行フラグ
     pub branch: String,         // git worktreeのbranch
     pub execution_path: String, // 実行ディレクトリパス
+    #[serde(default)]
+    pub claude_skip_permissions: bool, // --dangerously-skip-permissions フラグ
+    #[serde(default)]
+    pub claude_continue_from_last: bool, // -c フラグ
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,6 +35,10 @@ pub struct ExecutionHistory {
     pub output: String,
     pub branch: String,         // git worktreeのbranch
     pub execution_path: String, // 実行ディレクトリパス
+    #[serde(default)]
+    pub claude_skip_permissions: bool, // --dangerously-skip-permissions フラグ
+    #[serde(default)]
+    pub claude_continue_from_last: bool, // -c フラグ
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -63,6 +71,8 @@ impl Default for Schedule {
                 .unwrap_or_else(|_| std::path::PathBuf::from("."))
                 .to_string_lossy()
                 .to_string(),
+            claude_skip_permissions: false,
+            claude_continue_from_last: false,
         }
     }
 }
@@ -99,7 +109,7 @@ impl std::fmt::Display for ExecutionStatus {
 
 // Helper methods for database
 impl ScheduleStatus {
-    pub fn to_string(&self) -> String {
+    pub fn to_db_string(&self) -> String {
         match self {
             ScheduleStatus::Pending => "pending".to_string(),
             ScheduleStatus::Completed => "completed".to_string(),
@@ -118,7 +128,7 @@ impl ScheduleStatus {
 }
 
 impl ExecutionType {
-    pub fn to_string(&self) -> String {
+    pub fn to_db_string(&self) -> String {
         match self {
             ExecutionType::Manual => "manual".to_string(),
             ExecutionType::Auto => "auto".to_string(),
@@ -139,7 +149,7 @@ impl ExecutionType {
 }
 
 impl ExecutionStatus {
-    pub fn to_string(&self) -> String {
+    pub fn to_db_string(&self) -> String {
         match self {
             ExecutionStatus::Success => "success".to_string(),
             ExecutionStatus::Failed => "failed".to_string(),

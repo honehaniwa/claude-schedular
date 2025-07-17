@@ -38,6 +38,12 @@ node_modules/
 # System files
 .Claude/
 .claude/ 
+
+# Coverage files
+lcov.info
+*.lcov
+coverage/
+
 # Build artifacts
 target/
 Cargo.lock
