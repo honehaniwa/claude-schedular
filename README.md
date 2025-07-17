@@ -64,7 +64,62 @@ cargo run
 ### 開発者向け
 
 ### ビルド済みバイナリの使用
-[リリースページ](https://github.com/honehaniwa/claude-scheduler/releases)から最新版をダウンロードしてください。
+
+[リリースページ](https://github.com/honehaniwa/claude-scheduler/releases)から用途に応じたバージョンをダウンロードしてください。
+
+#### GUI版（全機能 - 推奨）
+デスクトップアプリケーションとして使用する場合：
+- **Windows**: `claude-scheduler-gui-x86_64-windows.zip`
+- **macOS Intel**: `claude-scheduler-gui-x86_64-macos.tar.gz`
+- **macOS Apple Silicon**: `claude-scheduler-gui-aarch64-macos.tar.gz`
+- **Linux**: `claude-scheduler-gui-x86_64-linux.tar.gz`
+
+#### CLI版（軽量版）
+コマンドラインのみ使用する場合（サーバー環境など）：
+- **Windows**: `claude-scheduler-cli-x86_64-windows.zip`
+- **macOS Intel**: `claude-scheduler-cli-x86_64-macos.tar.gz`
+- **macOS Apple Silicon**: `claude-scheduler-cli-aarch64-macos.tar.gz`
+- **Linux**: `claude-scheduler-cli-x86_64-linux.tar.gz`
+
+### インストール手順
+
+#### GUI版のインストール
+```bash
+# macOS/Linuxの場合
+tar -xzf claude-scheduler-gui-*.tar.gz
+chmod +x claude-scheduler
+./claude-scheduler  # GUIが起動します
+
+# Windowsの場合
+# 1. ZIPファイルを解凍
+# 2. claude-scheduler.exeをダブルクリック
+```
+
+#### CLI版のインストール
+```bash
+# macOS/Linuxの場合
+tar -xzf claude-scheduler-cli-*.tar.gz
+chmod +x claude-scheduler
+sudo mv claude-scheduler /usr/local/bin/  # システム全体で使用可能に
+
+# 動作確認
+claude-scheduler --help
+
+# Windowsの場合
+# 1. ZIPファイルを解凍
+# 2. claude-scheduler.exeをPATHの通ったディレクトリに配置
+# 3. コマンドプロンプトで claude-scheduler --help
+```
+
+### バージョンの違い
+
+| 機能 | GUI版 | CLI版 |
+|------|-------|-------|
+| デスクトップアプリケーション | ✓ | ✗ |
+| コマンドライン操作 | ✓ | ✓ |
+| ファイルサイズ | 大 | 小 |
+| 依存ライブラリ | 多い | 少ない |
+| サーバー環境での使用 | △ | ✓ |
 
 ## 使い方
 

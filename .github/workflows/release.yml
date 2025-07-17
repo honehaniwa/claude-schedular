@@ -15,29 +15,72 @@ jobs:
     strategy:
       matrix:
         include:
+          # GUI版（全機能付き）
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             binary_name: claude-scheduler
-            features: "--no-default-features"
+            features: "--all-features"
+            artifact_name: claude-scheduler-gui-x86_64-linux
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             binary_name: claude-scheduler.exe
-            features: "--no-default-features"
+            features: "--all-features"
+            artifact_name: claude-scheduler-gui-x86_64-windows
           - os: macos-latest
             target: x86_64-apple-darwin
             binary_name: claude-scheduler
-            features: "--no-default-features"
+            features: "--all-features"
+            artifact_name: claude-scheduler-gui-x86_64-macos
           - os: macos-latest
             target: aarch64-apple-darwin
             binary_name: claude-scheduler
-            features: "--no-default-features"
+            features: "--all-features"
+            artifact_name: claude-scheduler-gui-aarch64-macos
+          
+          # CLI版（軽量版）
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: claude-scheduler
+            features: "--no-default-features --features cli"
+            artifact_name: claude-scheduler-cli-x86_64-linux
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: claude-scheduler.exe
+            features: "--no-default-features --features cli"
+            artifact_name: claude-scheduler-cli-x86_64-windows
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: claude-scheduler
+            features: "--no-default-features --features cli"
+            artifact_name: claude-scheduler-cli-x86_64-macos
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: claude-scheduler
+            features: "--no-default-features --features cli"
+            artifact_name: claude-scheduler-cli-aarch64-macos
             
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install system dependencies (Ubuntu - CLI only)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Install system dependencies (Ubuntu - GUI)
+      if: matrix.os == 'ubuntu-latest' && contains(matrix.features, 'all-features')
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          pkg-config \
+          libgtk-3-dev \
+          libwebkit2gtk-4.0-dev \
+          libsoup2.4-dev \
+          javascriptcoregtk-4.0 \
+          webkit2gtk-4.0 \
+          libayatana-appindicator3-dev \
+          librsvg2-dev \
+          libxdo-dev \
+          libssl-dev
+      
+    - name: Install system dependencies (Ubuntu - CLI)
+      if: matrix.os == 'ubuntu-latest' && !contains(matrix.features, 'all-features')
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -71,9 +114,9 @@ jobs:
       run: |
         cd target/${{ matrix.target }}/release
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          7z a ../../../claude-scheduler-${{ matrix.target }}.zip ${{ matrix.binary_name }}
+          7z a ../../../${{ matrix.artifact_name }}.zip ${{ matrix.binary_name }}
         else
-          tar czf ../../../claude-scheduler-${{ matrix.target }}.tar.gz ${{ matrix.binary_name }}
+          tar czf ../../../${{ matrix.artifact_name }}.tar.gz ${{ matrix.binary_name }}
         fi
       shell: bash
       
@@ -82,6 +125,6 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          claude-scheduler-${{ matrix.target }}.*
+          ${{ matrix.artifact_name }}.*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
