@@ -1,0 +1,57 @@
+name: Release GUI Experimental
+
+# 手動でのみ実行可能な実験的ワークフロー
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-gui-windows:
+    name: Build GUI for Windows (Experimental)
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    # Windowsでは追加の依存関係は不要（Dioxusが自動処理）
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: x86_64-pc-windows-msvc
+        
+    - name: Build GUI binary
+      run: cargo build --release --target x86_64-pc-windows-msvc --all-features
+      
+    - name: Test GUI binary
+      run: |
+        ./target/x86_64-pc-windows-msvc/release/claude-scheduler.exe --version
+      
+  build-gui-macos:
+    name: Build GUI for macOS (Experimental)
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64-apple-darwin, aarch64-apple-darwin]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install system dependencies
+      run: |
+        brew install pkg-config openssl
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: ${{ matrix.target }}
+        
+    - name: Build GUI binary
+      run: cargo build --release --target ${{ matrix.target }} --all-features
+      
+    - name: Test GUI binary (Intel only)
+      if: matrix.target == 'x86_64-apple-darwin'
+      run: |
+        ./target/${{ matrix.target }}/release/claude-scheduler --version 

@@ -15,29 +15,14 @@ jobs:
     strategy:
       matrix:
         include:
-          # GUI版（全機能付き）
+          # GUI版（Linuxのみ - 現時点で安定してビルド可能）
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             binary_name: claude-scheduler
             features: "--all-features"
             artifact_name: claude-scheduler-gui-x86_64-linux
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            binary_name: claude-scheduler.exe
-            features: "--all-features"
-            artifact_name: claude-scheduler-gui-x86_64-windows
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            binary_name: claude-scheduler
-            features: "--all-features"
-            artifact_name: claude-scheduler-gui-x86_64-macos
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            binary_name: claude-scheduler
-            features: "--all-features"
-            artifact_name: claude-scheduler-gui-aarch64-macos
           
-          # CLI版（軽量版）
+          # CLI版（全プラットフォーム）
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             binary_name: claude-scheduler
