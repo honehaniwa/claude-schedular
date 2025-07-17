@@ -61,6 +61,16 @@ cargo build --release
 cargo run
 ```
 
+### 開発者向け
+
+#### Pre-commitフック
+このプロジェクトにはpre-commitフックが設定されており、`git add`する前に自動的に`cargo fmt --all -- --check`が実行されます。
+
+フォーマットエラーがある場合は、以下のコマンドで修正してください：
+```bash
+cargo fmt --all
+```
+
 ### ビルド済みバイナリの使用
 [リリースページ](https://github.com/honehaniwa/claude-schedular/releases)から最新版をダウンロードしてください。
 
@@ -114,6 +124,15 @@ cargo run
 # Git worktreeを使用して実行
 ./claude-scheduler exec -w -b feature-branch "run tests"
 
+# Claude実行時に確認をスキップ
+./claude-scheduler exec --skip-permissions "create a function"
+
+# 前回のClaudeセッションから継続
+./claude-scheduler exec -c "continue the implementation"
+
+# 両方のオプションを使用
+./claude-scheduler exec --skip-permissions -c "fix the bug"
+
 # スケジュール登録（明日の15:30に実行）
 ./claude-scheduler schedule "backup database" -t 15:30 -d tomorrow
 
@@ -140,6 +159,8 @@ OPTIONS:
   -m, --mode <MODE>        実行モード [claude|shell] (default: claude)
   -b, --branch <BRANCH>    Git worktreeブランチ指定
   -w, --worktree          Git worktree並列実行を有効化
+  --skip-permissions       Claude実行時の確認をスキップ
+  -c, --continue-from-last 前回のClaudeセッションから継続
   -v, --verbose           詳細出力
 ```
 
@@ -154,6 +175,8 @@ OPTIONS:
   -b, --branch <BRANCH>   Git worktreeブランチ指定
   -w, --worktree         Git worktree並列実行を有効化
   --memo <MEMO>          メモ追加
+  --skip-permissions      Claude実行時の確認をスキップ
+  --continue-from-last    前回のClaudeセッションから継続
 ```
 
 ##### `list` - スケジュール一覧
@@ -354,3 +377,16 @@ cargo clippy --all-targets --all-features -- -D warnings
    ```markdown
    [![codecov](https://codecov.io/gh/honehaniwa/claude-schedular/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/honehaniwa/claude-schedular)
    ```
+
+---
+
+## ⚠️ セキュリティ監査（cargo audit）について
+
+本プロジェクトは依存クレートの都合により、現時点でcargo auditによるセキュリティチェックがfailします。
+
+- sqlx経由でrsaクレートの脆弱性（Marvin Attack: RUSTSEC-2023-0071）が含まれます（2024年7月現在、修正版なし）
+- GUIモードではGTK3系の依存が「メンテされていない」警告を出します
+- CLIモードのみでビルド（`cargo build --release --no-default-features`）すれば、これらの影響は実質ありません
+- CI/CDではcargo auditジョブはallow failure（失敗しても全体はfailにならない）設定です
+
+依存クレートのアップデートにより将来的に解消される見込みです。

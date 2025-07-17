@@ -1,5 +1,5 @@
-use clap::{Parser, Subcommand};
 use chrono::NaiveDate;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "claude-scheduler")]
@@ -31,6 +31,14 @@ pub enum Commands {
         /// Enable Git worktree parallel execution
         #[arg(short, long)]
         worktree: bool,
+
+        /// Skip permissions check (--dangerously-skip-permissions)
+        #[arg(long)]
+        skip_permissions: bool,
+
+        /// Continue from last Claude session (-c)
+        #[arg(short = 'c', long)]
+        continue_from_last: bool,
     },
 
     /// Schedule a command for later execution
@@ -61,6 +69,14 @@ pub enum Commands {
         /// Add a memo
         #[arg(long)]
         memo: Option<String>,
+
+        /// Skip permissions check (--dangerously-skip-permissions)
+        #[arg(long)]
+        skip_permissions: bool,
+
+        /// Continue from last Claude session (-c)
+        #[arg(long)]
+        continue_from_last: bool,
     },
 
     /// List scheduled commands
@@ -143,19 +159,19 @@ pub enum Commands {
 pub enum ConfigAction {
     /// Show current configuration
     Show,
-    
+
     /// Set a configuration value
     Set {
         /// Configuration key
         key: String,
-        
+
         /// Configuration value
         value: String,
     },
-    
+
     /// Get a configuration value
     Get {
         /// Configuration key
         key: String,
     },
-} 
+}

@@ -1,6 +1,7 @@
 use std::process::Command;
 
 /// 指定されたディレクトリがgitリポジトリかチェック
+#[allow(dead_code)]
 pub fn is_git_repository(directory: &str) -> bool {
     let expanded_path = crate::utils::expand_path(directory);
 
@@ -20,6 +21,7 @@ pub fn is_git_repository(directory: &str) -> bool {
 }
 
 /// 指定されたディレクトリのgit worktreeのbranchを取得する関数
+#[allow(dead_code)]
 pub fn get_git_worktree_branches_in_directory(directory: &str) -> Vec<String> {
     let expanded_path = crate::utils::expand_path(directory);
 
@@ -98,6 +100,7 @@ pub fn get_git_worktree_branches_in_directory(directory: &str) -> Vec<String> {
 }
 
 /// 現在の作業ディレクトリのgit worktreeのbranchを取得する関数（後方互換性のため）
+#[allow(dead_code)]
 pub fn get_git_worktree_branches() -> Vec<String> {
     let current_dir = std::env::current_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
@@ -107,6 +110,7 @@ pub fn get_git_worktree_branches() -> Vec<String> {
 }
 
 /// 指定されたディレクトリの現在のbranchを取得
+#[allow(dead_code)]
 pub fn get_current_branch_in_directory(directory: &str) -> String {
     let expanded_path = crate::utils::expand_path(directory);
 
@@ -134,6 +138,7 @@ pub fn get_current_branch_in_directory(directory: &str) -> String {
 }
 
 /// 現在のbranchを取得（後方互換性のため）
+#[allow(dead_code)]
 pub fn get_current_branch() -> String {
     let current_dir = std::env::current_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
@@ -143,6 +148,7 @@ pub fn get_current_branch() -> String {
 }
 
 /// 現在のbranchを取得（Result版）
+#[allow(dead_code)]
 pub fn get_current_branch_result() -> Result<String, std::io::Error> {
     let current_dir = std::env::current_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
@@ -152,15 +158,16 @@ pub fn get_current_branch_result() -> Result<String, std::io::Error> {
 }
 
 /// 指定されたbranchのworktreeパスを取得
+#[allow(dead_code)]
 pub fn get_worktree_path(branch: &str) -> Result<String, std::io::Error> {
     let current_dir = std::env::current_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
         .to_string_lossy()
         .to_string();
-    
+
     let expanded_path = crate::utils::expand_path(&current_dir);
-    let worktree_path = format!("{}/claude-schedular-{}", expanded_path, branch);
-    
+    let worktree_path = format!("{expanded_path}/claude-schedular-{branch}");
+
     // worktreeが存在するか確認
     if std::path::Path::new(&worktree_path).exists() {
         Ok(worktree_path)
@@ -171,11 +178,14 @@ pub fn get_worktree_path(branch: &str) -> Result<String, std::io::Error> {
 }
 
 /// git worktreeでのコマンド実行
+#[allow(dead_code)]
 pub fn execute_command_in_worktree(
     command: &str,
     branch: &str,
     is_shell_mode: bool,
     execution_path: &str,
+    claude_skip_permissions: bool,
+    claude_continue_from_last: bool,
 ) -> Result<std::process::Output, std::io::Error> {
     let expanded_path = crate::utils::expand_path(execution_path);
     let worktree_path = format!("{expanded_path}/claude-schedular-{branch}");
@@ -208,7 +218,14 @@ pub fn execute_command_in_worktree(
     let full_command = if is_shell_mode {
         command.to_string()
     } else {
-        format!("claude -p \"{command}\"")
+        let mut claude_cmd = String::from("claude");
+        if claude_skip_permissions {
+            claude_cmd.push_str(" --dangerously-skip-permissions");
+        }
+        if claude_continue_from_last {
+            claude_cmd.push_str(" -c");
+        }
+        format!("{claude_cmd} -p \"{command}\"")
     };
 
     Command::new("sh")
