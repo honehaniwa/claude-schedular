@@ -1,6 +1,6 @@
 [package]
 name = "claude-scheduler"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Claude Scheduler Contributors"]
 description = "A web-based scheduler for Claude AI commands with Git worktree support"

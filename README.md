@@ -69,9 +69,10 @@ cargo run
 
 #### GUI版（全機能 - 推奨）
 デスクトップアプリケーションとして使用する場合：
-- **Linux**: `claude-scheduler-gui-x86_64-linux.tar.gz` ✅ 利用可能
-- **Windows**: 準備中（ソースからビルド可能）
-- **macOS**: 準備中（ソースからビルド可能）
+- **Windows**: `claude-scheduler-gui-x86_64-windows.zip`
+- **macOS Intel**: `claude-scheduler-gui-x86_64-macos.tar.gz`
+- **macOS Apple Silicon**: `claude-scheduler-gui-aarch64-macos.tar.gz`
+- **Linux**: `claude-scheduler-gui-x86_64-linux.tar.gz`
 
 #### CLI版（軽量版）
 コマンドラインのみ使用する場合（サーバー環境など）：

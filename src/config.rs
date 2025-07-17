@@ -101,3 +101,11 @@ pub fn default_database_path() -> PathBuf {
         PathBuf::from(".claude-scheduler/db.sqlite")
     }
 }
+
+pub fn get_config_dir() -> Result<PathBuf> {
+    if let Some(proj_dirs) = ProjectDirs::from("", "", "claude-scheduler") {
+        Ok(proj_dirs.config_dir().to_path_buf())
+    } else {
+        Ok(PathBuf::from(".claude-scheduler"))
+    }
+}

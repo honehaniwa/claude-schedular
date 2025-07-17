@@ -7,6 +7,8 @@ pub mod config;
 pub mod database;
 pub mod git;
 pub mod models;
+#[cfg(feature = "gui")]
+pub mod persistence;
 pub mod utils;
 
 #[cfg(test)]

@@ -43,13 +43,18 @@ pub fn get_git_worktree_branches_in_directory(directory: &str) -> Vec<String> {
             for line in stdout.lines() {
                 if line.starts_with("branch ") {
                     let branch_name = line.strip_prefix("branch ").unwrap_or("main");
-                    if !branch_name.is_empty() {
-                        branches.push(branch_name.to_string());
+                    // refs/heads/ プレフィックスを削除
+                    let clean_branch = branch_name
+                        .strip_prefix("refs/heads/")
+                        .unwrap_or(branch_name);
+                    if !clean_branch.is_empty() {
+                        branches.push(clean_branch.to_string());
                     }
                 }
             }
 
-            if branches.is_empty() {
+            // worktreeが1つしかない場合も、通常のブランチ一覧を取得
+            if branches.len() <= 1 {
                 // フォールバック: 通常のbranchを取得
                 if let Ok(branch_output) = Command::new("git")
                     .current_dir(&expanded_path)

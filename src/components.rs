@@ -8,6 +8,8 @@ use crate::git::*;
 #[cfg(feature = "gui")]
 use crate::models::*;
 #[cfg(feature = "gui")]
+use crate::persistence;
+#[cfg(feature = "gui")]
 use crate::utils::*;
 
 /// スケジュールを5秒ごとにチェックする関数
@@ -100,7 +102,11 @@ fn schedule_checker(
                         claude_continue_from_last: schedule.claude_continue_from_last,
                     };
 
-                    execution_history.with_mut(|h| h.push(history));
+                    execution_history.with_mut(|h| {
+                        h.push(history);
+                        // 実行履歴を永続化
+                        let _ = persistence::save_execution_history(h);
+                    });
                 }
             }
         });
@@ -110,6 +116,7 @@ fn schedule_checker(
 /// メインアプリケーション
 pub fn app() -> Element {
     let mut text_content = use_signal(String::new);
+    let mut memo_text = use_signal(String::new);
     // システムのダークモード設定を初期値として設定
     let mut is_dark_mode = use_signal(|| {
         // 初期化時にシステムテーマを同期的に検出
@@ -157,14 +164,16 @@ pub fn app() -> Element {
     });
     let mut is_executing = use_signal(|| false);
 
-    let mut schedules = use_signal(Vec::<Schedule>::new);
+    // 永続化されたデータを読み込み
+    let mut schedules = use_signal(|| persistence::load_schedules().unwrap_or_default());
     let mut use_schedule = use_signal(|| false);
     let mut is_tomorrow = use_signal(|| false);
     let mut selected_hour = use_signal(|| 9u32);
     let mut selected_minute = use_signal(|| 0u32);
 
-    // 実行履歴用の状態
-    let mut execution_history = use_signal(Vec::<ExecutionHistory>::new);
+    // 実行履歴用の状態（永続化データを読み込み）
+    let mut execution_history =
+        use_signal(|| persistence::load_execution_history().unwrap_or_default());
 
     // シェルモード実行用の状態
     let mut use_shell_mode = use_signal(|| false);
@@ -172,6 +181,9 @@ pub fn app() -> Element {
     // Claude実行オプション用の状態
     let mut claude_skip_permissions = use_signal(|| false);
     let mut claude_continue_from_last = use_signal(|| false);
+
+    // 編集モード用の状態
+    let mut editing_schedule = use_signal(|| None::<Schedule>);
 
     // branch選択用の状態
     let mut available_branches = use_signal(get_git_worktree_branches);
@@ -286,7 +298,11 @@ pub fn app() -> Element {
                         claude_skip_permissions: claude_skip_permissions(),
                         claude_continue_from_last: claude_continue_from_last(),
                     };
-                    execution_history.with_mut(|h| h.push(history));
+                    execution_history.with_mut(|h| {
+                        h.push(history);
+                        // 実行履歴を永続化
+                        let _ = persistence::save_execution_history(h);
+                    });
 
                     result_msg
                 }
@@ -315,7 +331,11 @@ pub fn app() -> Element {
                         claude_skip_permissions: claude_skip_permissions(),
                         claude_continue_from_last: claude_continue_from_last(),
                     };
-                    execution_history.with_mut(|h| h.push(history));
+                    execution_history.with_mut(|h| {
+                        h.push(history);
+                        // 実行履歴を永続化
+                        let _ = persistence::save_execution_history(h);
+                    });
 
                     error_msg
                 }
@@ -325,7 +345,7 @@ pub fn app() -> Element {
         });
     };
 
-    // スケジュール追加関数
+    // スケジュール追加/更新関数
     let add_schedule = move |_: Event<MouseData>| {
         let prompt = text_content().clone();
         if !prompt.trim().is_empty() {
@@ -339,28 +359,59 @@ pub fn app() -> Element {
                 None
             };
 
-            let schedule = Schedule {
-                id: format!("schedule_{}", chrono::Utc::now().timestamp()),
-                command: prompt,
-                scheduled_time,
-                _memo: String::new(),
-                created_at: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-                status: ScheduleStatus::Pending,
-                is_shell_mode: use_shell_mode(),
-                branch: if use_git_worktree() {
-                    selected_branch()
-                } else {
-                    get_current_branch()
-                },
-                execution_path: execution_path(),
-                claude_skip_permissions: claude_skip_permissions(),
-                claude_continue_from_last: claude_continue_from_last(),
-            };
+            if let Some(edit_sched) = editing_schedule() {
+                // 編集モード: 既存のスケジュールを更新
+                schedules.with_mut(|s| {
+                    if let Some(sched) = s.iter_mut().find(|s| s.id == edit_sched.id) {
+                        sched.command = prompt;
+                        sched.scheduled_time = scheduled_time;
+                        sched._memo = memo_text();
+                        sched.is_shell_mode = use_shell_mode();
+                        sched.branch = if use_git_worktree() {
+                            selected_branch()
+                        } else {
+                            get_current_branch()
+                        };
+                        sched.execution_path = execution_path();
+                        sched.claude_skip_permissions = claude_skip_permissions();
+                        sched.claude_continue_from_last = claude_continue_from_last();
+                    }
+                    // スケジュールを永続化
+                    let _ = persistence::save_schedules(s);
+                });
 
-            schedules.with_mut(|s| s.push(schedule));
+                // 編集モードを解除
+                editing_schedule.set(None);
+            } else {
+                // 新規作成モード
+                let schedule = Schedule {
+                    id: format!("schedule_{}", chrono::Utc::now().timestamp()),
+                    command: prompt,
+                    scheduled_time,
+                    _memo: memo_text(),
+                    created_at: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                    status: ScheduleStatus::Pending,
+                    is_shell_mode: use_shell_mode(),
+                    branch: if use_git_worktree() {
+                        selected_branch()
+                    } else {
+                        get_current_branch()
+                    },
+                    execution_path: execution_path(),
+                    claude_skip_permissions: claude_skip_permissions(),
+                    claude_continue_from_last: claude_continue_from_last(),
+                };
+
+                schedules.with_mut(|s| {
+                    s.push(schedule);
+                    // スケジュールを永続化
+                    let _ = persistence::save_schedules(s);
+                });
+            }
+
+            // フォームをリセット
             text_content.set(String::new());
-
-            // 時間設定をリセット
+            memo_text.set(String::new());
             use_schedule.set(false);
             is_tomorrow.set(false);
             selected_hour.set(9);
@@ -864,12 +915,10 @@ pub fn app() -> Element {
                                         },
                                         style: "padding: 8px; border: 1px solid {border_color}; border-radius: 4px; background: {textarea_bg}; color: {text_color}; font-family: monospace;",
 
-                                        // 一部の時間オプション（省略版）
-                                        option { value: "9", "09時" }
-                                        option { value: "12", "12時" }
-                                        option { value: "15", "15時" }
-                                        option { value: "18", "18時" }
-                                        option { value: "21", "21時" }
+                                        // 0時から23時まで1時間単位
+                                        for hour in 0..24 {
+                                            option { value: hour.to_string(), {format!("{:02}時", hour)} }
+                                        }
                                     }
 
                                     span {
@@ -886,11 +935,10 @@ pub fn app() -> Element {
                                         },
                                         style: "padding: 8px; border: 1px solid {border_color}; border-radius: 4px; background: {textarea_bg}; color: {text_color}; font-family: monospace;",
 
-                                        // 一部の分オプション（省略版）
-                                        option { value: "0", "00分" }
-                                        option { value: "15", "15分" }
-                                        option { value: "30", "30分" }
-                                        option { value: "45", "45分" }
+                                        // 0分から55分まで5分単位
+                                        for minute in (0..60).step_by(5) {
+                                            option { value: minute.to_string(), {format!("{:02}分", minute)} }
+                                        }
                                     }
                                 }
 
@@ -928,7 +976,13 @@ pub fn app() -> Element {
                             onclick: add_schedule,
                             disabled: text_content().trim().is_empty(),
                             style: "padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s ease;",
-                            {if use_schedule() { "📅 スケジュール登録" } else { "📋 リスト追加" }}
+                                                                {
+                                        if editing_schedule().is_some() {
+                                            if use_schedule() { "📝 スケジュール更新" } else { "📝 更新" }
+                                        } else {
+                                            if use_schedule() { "📅 スケジュール登録" } else { "📋 リスト追加" }
+                                        }
+                                    }
                         }
 
                         button {
@@ -936,6 +990,26 @@ pub fn app() -> Element {
                             style: "padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s ease;",
                             "🗑️ クリア"
                         }
+
+                        {if editing_schedule().is_some() {
+                            rsx! {
+                                button {
+                                    onclick: move |_: Event<MouseData>| {
+                                        editing_schedule.set(None);
+                                        text_content.set(String::new());
+                                        memo_text.set(String::new());
+                                        use_schedule.set(false);
+                                        is_tomorrow.set(false);
+                                        selected_hour.set(9);
+                                        selected_minute.set(0);
+                                    },
+                                    style: "padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s ease;",
+                                    "❌ キャンセル"
+                                }
+                            }
+                        } else {
+                            rsx! {}
+                        }}
                     }
                 }
             }
@@ -1005,10 +1079,49 @@ pub fn app() -> Element {
 
                                 button {
                                     onclick: {
+                                        let edit_schedule = schedule.clone();
+                                        move |_: Event<MouseData>| {
+                                            // 編集モードに入る
+                                            editing_schedule.set(Some(edit_schedule.clone()));
+                                            text_content.set(edit_schedule.command.clone());
+                                            memo_text.set(edit_schedule._memo.clone());
+                                            use_shell_mode.set(edit_schedule.is_shell_mode);
+                                            use_schedule.set(edit_schedule.scheduled_time.is_some());
+                                            execution_path.set(edit_schedule.execution_path.clone());
+                                            selected_branch.set(edit_schedule.branch.clone());
+                                            use_git_worktree.set(!edit_schedule.branch.is_empty() && edit_schedule.branch != "main");
+                                            claude_skip_permissions.set(edit_schedule.claude_skip_permissions);
+                                            claude_continue_from_last.set(edit_schedule.claude_continue_from_last);
+
+                                            // 時刻を設定
+                                            if let Some(time) = &edit_schedule.scheduled_time {
+                                                let parts: Vec<&str> = time.split(' ').collect();
+                                                if parts.len() == 2 {
+                                                    is_tomorrow.set(parts[0] != "today");
+
+                                                    let time_parts: Vec<&str> = parts[1].split(':').collect();
+                                                    if time_parts.len() == 2 {
+                                                        if let (Ok(hour), Ok(minute)) = (time_parts[0].parse::<u32>(), time_parts[1].parse::<u32>()) {
+                                                            selected_hour.set(hour);
+                                                            selected_minute.set(minute);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    style: "padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500;",
+                                    "✏️ 編集"
+                                }
+
+                                button {
+                                    onclick: {
                                         let schedule_id = schedule.id.clone();
                                         move |_: Event<MouseData>| {
                                             schedules.with_mut(|s| {
                                                 s.retain(|sched| sched.id != schedule_id);
+                                                // スケジュールを永続化
+                                                let _ = persistence::save_schedules(s);
                                             });
                                         }
                                     },

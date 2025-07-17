@@ -7,6 +7,8 @@ mod config;
 mod database;
 mod git;
 mod models;
+#[cfg(feature = "gui")]
+mod persistence;
 mod utils;
 
 use anyhow::Result;
