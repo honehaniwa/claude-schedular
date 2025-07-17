@@ -63,14 +63,6 @@ cargo run
 
 ### 開発者向け
 
-#### Pre-commitフック
-このプロジェクトにはpre-commitフックが設定されており、`git add`する前に自動的に`cargo fmt --all -- --check`が実行されます。
-
-フォーマットエラーがある場合は、以下のコマンドで修正してください：
-```bash
-cargo fmt --all
-```
-
 ### ビルド済みバイナリの使用
 [リリースページ](https://github.com/honehaniwa/claude-scheduler/releases)から最新版をダウンロードしてください。
 
