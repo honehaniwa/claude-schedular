@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: claude-scheduler
+            features: "--no-default-features"
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: claude-scheduler.exe
+            features: "--no-default-features"
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: claude-scheduler
+            features: "--no-default-features"
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: claude-scheduler
+            features: "--no-default-features"
+            
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install system dependencies (Ubuntu - CLI only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          pkg-config \
+          build-essential \
+          libssl-dev
+    
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install pkg-config openssl
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: ${{ matrix.target }}
+        
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-${{ matrix.target }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Build release binary
+      run: cargo build --release --target ${{ matrix.target }} ${{ matrix.features }}
+      
+    - name: Prepare binary
+      run: |
+        cd target/${{ matrix.target }}/release
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          7z a ../../../claude-scheduler-${{ matrix.target }}.zip ${{ matrix.binary_name }}
+        else
+          tar czf ../../../claude-scheduler-${{ matrix.target }}.tar.gz ${{ matrix.binary_name }}
+        fi
+      shell: bash
+      
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          claude-scheduler-${{ matrix.target }}.*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
