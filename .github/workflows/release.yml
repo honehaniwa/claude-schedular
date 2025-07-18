@@ -113,6 +113,12 @@ jobs:
       with:
         target: ${{ matrix.target }}
         
+    - name: Clean build cache for cross-compilation
+      if: matrix.os == 'macos-latest' && matrix.target == 'aarch64-apple-darwin'
+      run: |
+        rm -rf target
+        cargo clean
+        
     - name: Cache dependencies
       uses: actions/cache@v4
       with:
@@ -123,7 +129,17 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.target }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
         
     - name: Build release binary
-      run: cargo build --release --target ${{ matrix.target }} ${{ matrix.features }}
+      run: |
+        if [[ "${{ matrix.os }}" == "macos-latest" && "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
+          # Apple Siliconクロスコンパイル用の設定
+          export CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=clang
+          export CC=clang
+          export AR=ar
+          # ビルドキャッシュの問題を回避
+          cargo clean -p rustix
+        fi
+        cargo build --release --target ${{ matrix.target }} ${{ matrix.features }}
+      shell: bash
       
     - name: Prepare binary
       run: |
